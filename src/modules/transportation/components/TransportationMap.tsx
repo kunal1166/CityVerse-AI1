@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import L from 'leaflet';
+import { loadOsmGeometry, osmRoadsToSegments, type OsmGeometry } from '../lib/osmGeometry';
 import { useCityStore, CITIES_CONFIG } from '../../../store/useCityStore';
 import { CITY_ROADS, CITY_CAMERAS, SCENARIO_CONFIGS } from '../transportationData';
 import { RoadSegment, TrafficCamera, SignalController, ScenarioType, RouteOption, RoadType } from '../transportationTypes';
@@ -111,8 +112,6 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layersGroupRef = useRef<L.LayerGroup | null>(null);
   const measureGroupRef = useRef<L.LayerGroup | null>(null);
-  const measureModeRef = useRef(false);
-  const drawRegionModeRef = useRef(false);
 
   // Map Controls & Operational Modes
   const [viewMode, setViewMode] = useState<ViewModeType>('flow');
@@ -139,6 +138,20 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
   // `timelineHour` so it updates instantly, while the expensive map redraw reads
   // this debounced value - keeping the drag smooth without feeling laggy.
   const [debouncedTimelineHour, setDebouncedTimelineHour] = useState<number>(8.5);
+
+  // Real OpenStreetMap geometry. null = not generated yet -> use built-in roads.
+  const [osmGeometry, setOsmGeometry] = useState<OsmGeometry | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setOsmGeometry(null); // clear immediately so we never show another city's roads
+    loadOsmGeometry(selectedCity).then((geo) => {
+      if (!cancelled) setOsmGeometry(geo);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCity]);
   const [isPlayingTimeline, setIsPlayingTimeline] = useState<boolean>(false);
   const [showTimelineBar, setShowTimelineBar] = useState<boolean>(true);
 
@@ -188,16 +201,6 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
   const toggleLayer = (key: keyof typeof layers) => {
     setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
   };
-
-  // Leaflet event handlers are registered once, so keep the latest React state
-  // in refs instead of closing over the values from the initial render.
-  useEffect(() => {
-    measureModeRef.current = measureMode;
-  }, [measureMode]);
-
-  useEffect(() => {
-    drawRegionModeRef.current = drawRegionMode;
-  }, [drawRegionMode]);
 
   // Sync external scenario name if provided
   useEffect(() => {
@@ -378,6 +381,16 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
       scenarioSpeedDrop = 6;
     }
 
+    // When real OSM geometry is loaded, build the segments from it instead of
+    // the built-in straight-line roads. Traffic figures stay simulated either way.
+    if (osmGeometry && osmGeometry.roads.length > 0) {
+      return osmRoadsToSegments(osmGeometry, {
+        hour: debouncedTimelineHour,
+        congestionBias: scenarioAddedCongestion,
+        speedDrop: scenarioSpeedDrop,
+      });
+    }
+
     return rawRoads.map((road) => {
       let finalCongestion = Math.min(100, Math.round(road.congestionIndex * peakFactor + scenarioAddedCongestion));
       let finalSpeed = Math.max(2, Math.round(road.currentSpeed / peakFactor - scenarioSpeedDrop));
@@ -395,7 +408,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
         travelTime: Math.round(road.normalTravelTime * (1 + finalCongestion / 60)),
       };
     });
-  }, [selectedCity, debouncedTimelineHour, scenarioMode]);
+  }, [selectedCity, debouncedTimelineHour, scenarioMode, osmGeometry]);
 
   // Road Type Filter Handlers & Counts
   const toggleRoadType = (type: RoadType) => {
@@ -663,24 +676,16 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
       // Map Click Event Listener for Measure & Region Tools
       map.on('click', (e: L.LeafletMouseEvent) => {
         const { lat, lng } = e.latlng;
-        if (measureModeRef.current) {
+        if (measureMode) {
           setMeasurePoints((prev) => [...prev, [lat, lng]]);
-        } else if (drawRegionModeRef.current) {
+        } else if (drawRegionMode) {
           setRegionPoints((prev) => [...prev, [lat, lng]]);
         }
       });
     } else {
       mapInstanceRef.current.setView([cityConfig.lat, cityConfig.lng], cityConfig.zoom);
     }
-    return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-        layersGroupRef.current = null;
-        measureGroupRef.current = null;
-      }
-    };
-  }, [selectedCity, cityConfig]);
+  }, [selectedCity, cityConfig, measureMode, drawRegionMode]);
 
   // Render All Map Elements
   useEffect(() => {

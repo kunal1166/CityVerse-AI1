@@ -165,6 +165,15 @@ export interface PredictionResult {
 /** Whether a value came from a live API or the built-in simulation. */
 export type DataSource = 'live' | 'mock';
 
+/** One row of the cross-domain correlation matrix, computed server-side. */
+export interface CorrelationPair {
+  metricA: string;
+  metricB: string;
+  coefficient: number;
+  impactLevel: string;
+  insight: string;
+}
+
 export interface CityDashboardData {
   city: CityConfig;
   timestamp: string;
@@ -179,6 +188,7 @@ export interface CityDashboardData {
 
   // --- Added by the live-data layer. Optional so mock-only responses still typecheck.
   prediction?: PredictionResult;
+  correlations?: CorrelationPair[];
   weatherSource?: DataSource;
   airQualitySource?: DataSource;
   trafficSource?: DataSource;

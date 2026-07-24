@@ -12,6 +12,7 @@ import { getLiveWeather } from './liveWeather.js';
 import { getLiveAirQuality } from './liveAirQuality.js';
 import { getLiveTraffic, logTrafficStatus } from './liveTraffic.js';
 import { buildModel, predict, describeModel, computeCorrelations } from './predictionModel.js';
+import fs from 'node:fs';
 import { CityId } from '../src/types/index.js';
 
 const app = express();
@@ -270,6 +271,40 @@ Strictly return valid JSON with no markdown block formatting.
     ],
     suggestedDispatch: ['Traffic Police Rapid Response Precinct', 'Municipal Drainage Quick Reaction Team'],
   });
+});
+
+// 10b. Real OSM Geometry Endpoint
+// Serves the static files produced by scripts/fetch-osm-geometry.mjs.
+// Returns 404 (not an error) when the script hasn't been run - the client then
+// falls back to its built-in road data, so the app works either way.
+const geometryCache = new Map<string, unknown>();
+
+app.get('/api/geometry', (req, res) => {
+  const cityId = (req.query.city as string) || 'singapore';
+  if (!/^[a-z]+$/.test(cityId)) {
+    return res.status(400).json({ error: 'Invalid city id' });
+  }
+
+  if (geometryCache.has(cityId)) {
+    return res.json(geometryCache.get(cityId));
+  }
+
+  const file = path.join(process.cwd(), 'server', 'data', `osm-${cityId}.json`);
+  if (!fs.existsSync(file)) {
+    return res.status(404).json({
+      error: 'No OSM geometry generated for this city',
+      hint: 'Run: node scripts/fetch-osm-geometry.mjs ' + cityId,
+    });
+  }
+
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+    geometryCache.set(cityId, parsed); // read from disk once, then serve from memory
+    res.json(parsed);
+  } catch (err: any) {
+    console.error(`[geometry] Failed to read ${file}:`, err.message);
+    res.status(500).json({ error: 'Geometry file is corrupt' });
+  }
 });
 
 // 11. AI Engine Info Endpoint (reports which provider/model is currently active)
