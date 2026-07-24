@@ -8,6 +8,7 @@ export const AnalyticsModule: React.FC = () => {
   const [timeWindow, setTimeWindow] = useState<'24h' | '7d' | '30d'>('24h');
 
   const hourlyTrends = dashboardData?.hourlyTrends || [];
+  const prediction = dashboardData?.prediction;
 
   const correlations = [
     {
@@ -129,27 +130,52 @@ export const AnalyticsModule: React.FC = () => {
       <div className="bg-white p-3.5 rounded-md border border-gray-200 shadow-2xs space-y-2">
         <div className="flex items-center justify-between pb-2 border-b border-gray-100">
           <span className="font-bold text-gray-900 text-xs flex items-center gap-1.5">
-            <Zap className="w-4 h-4 text-amber-500" /> AI Predictive Horizon Forecast
+            <Zap className="w-4 h-4 text-amber-500" /> Rainfall-Based Traffic Projection
           </span>
-          <span className="text-[10px] text-gray-400 font-mono">Model: Neural Mobility Net v2.4</span>
+          <span className="text-[10px] text-gray-400 font-mono">
+            {prediction?.model || 'Model unavailable'}
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="bg-blue-50/60 p-2.5 rounded border border-blue-200 space-y-1">
-            <div className="font-bold text-blue-900 text-xs">Horizon: +1 Hour</div>
-            <p className="text-[10px] text-blue-800">Congestion expected to peak at +8% on eastern expressways. Recommended signal offset +12s.</p>
+        {!prediction?.available ? (
+          <div className="bg-gray-50 p-2.5 rounded border border-gray-200 text-[11px] text-gray-600">
+            {prediction?.reason || 'Waiting for live forecast data...'}
           </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {prediction.horizons.map((h) => (
+                <div
+                  key={h.hoursAhead}
+                  className="bg-blue-50/60 p-2.5 rounded border border-blue-200 space-y-1"
+                >
+                  <div className="font-bold text-blue-900 text-xs flex items-center justify-between">
+                    <span>Horizon: +{h.hoursAhead} Hour{h.hoursAhead > 1 ? 's' : ''}</span>
+                    {h.extrapolated && (
+                      <span
+                        title="Forecast rainfall exceeds the observed range used to fit the model"
+                        className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[9px] font-bold"
+                      >
+                        EXTRAPOLATED
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-blue-800">
+                    Forecast rainfall <span className="font-bold">{h.rainfall} mm/h</span>.
+                    Projected average speed <span className="font-bold">{h.predictedSpeed} km/h</span>,
+                    congestion <span className="font-bold">{h.predictedCongestion}%</span>.
+                  </p>
+                </div>
+              ))}
+            </div>
 
-          <div className="bg-blue-50/60 p-2.5 rounded border border-blue-200 space-y-1">
-            <div className="font-bold text-blue-900 text-xs">Horizon: +4 Hours</div>
-            <p className="text-[10px] text-blue-800">Precipitation cell clearance will normalize traffic speeds to ~46 km/h. AQI index stabilizing.</p>
-          </div>
-
-          <div className="bg-blue-50/60 p-2.5 rounded border border-blue-200 space-y-1">
-            <div className="font-bold text-blue-900 text-xs">Horizon: +12 Hours</div>
-            <p className="text-[10px] text-blue-800">Evening commuter flow clear. Scheduled metro line maintenance can proceed as planned.</p>
-          </div>
-        </div>
+            <p className="text-[10px] text-gray-500 pt-1">
+              Projected by least-squares linear regression fitted on this city's observed
+              rainfall and traffic telemetry, applied to the live Open-Meteo rainfall
+              forecast. Not a machine-learning model.
+            </p>
+          </>
+        )}
       </div>
 
     </div>

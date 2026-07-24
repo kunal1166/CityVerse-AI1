@@ -62,6 +62,8 @@ export interface EnvMetric {
   aqiBreakdown: AQIBreakdown;
   windSpeed: number; // km/h
   windDirection: string;
+  /** Present only when live weather succeeded. */
+  forecast?: ForecastHour[];
 }
 
 export type SensorType = 'aqi' | 'flood_stage' | 'weather' | 'traffic_camera';
@@ -121,6 +123,48 @@ export interface HourlyTrendPoint {
   vehicleVolume: number;
 }
 
+/** One hour of the live rainfall forecast. forecast[0] is always the NEXT hour. */
+export interface ForecastHour {
+  time: string;
+  precipitation: number;
+}
+
+/** A fitted straight line. `r` reports fit quality; it is never used to predict. */
+export interface RegressionFit {
+  slope: number;
+  intercept: number;
+  r: number;
+  n: number;
+}
+
+/** One projected horizon, e.g. "+4 hours from now". */
+export interface PredictionHorizon {
+  hoursAhead: number;
+  time: string;
+  rainfall: number;
+  predictedSpeed: number;
+  predictedCongestion: number;
+  /** True when forecast rainfall exceeds anything we actually observed. */
+  extrapolated: boolean;
+}
+
+/**
+ * Always present in the dashboard payload. When `available` is false,
+ * `reason` explains why and `horizons` is empty.
+ */
+export interface PredictionResult {
+  available: boolean;
+  reason?: string;
+  model?: string;
+  speedFit?: RegressionFit;
+  congestionFit?: RegressionFit;
+  observedRainfallMax?: number;
+  horizons: PredictionHorizon[];
+}
+
+/** Whether a value came from a live API or the built-in simulation. */
+export type DataSource = 'live' | 'mock';
+
 export interface CityDashboardData {
   city: CityConfig;
   timestamp: string;
@@ -132,6 +176,12 @@ export interface CityDashboardData {
   recommendations: AiRecommendation[];
   timeline: CityTimelineEvent[];
   hourlyTrends: HourlyTrendPoint[];
+
+  // --- Added by the live-data layer. Optional so mock-only responses still typecheck.
+  prediction?: PredictionResult;
+  weatherSource?: DataSource;
+  airQualitySource?: DataSource;
+  trafficSource?: DataSource;
 }
 
 export interface AiAnalysisRequest {

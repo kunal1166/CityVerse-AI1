@@ -11,6 +11,7 @@ import { getCityDashboardData, injectCityIncident, resolveCityIncident } from '.
 import { getLiveWeather } from './liveWeather.js';
 import { getLiveAirQuality } from './liveAirQuality.js';
 import { getLiveTraffic, logTrafficStatus } from './liveTraffic.js';
+import { buildModel, predict, describeModel } from './predictionModel.js';
 import { CityId } from '../src/types/index.js';
 
 const app = express();
@@ -41,11 +42,47 @@ app.get('/api/dashboard', async (req, res) => {
   if (air) data.environment = { ...data.environment, ...air };
   if (traffic) data.traffic = { ...data.traffic, ...traffic };
 
+  // --- Prediction -------------------------------------------------------
+  // Fit a line through observed rainfall vs traffic, then read predicted
+  // values off that line using the live rainfall forecast.
+  // Always returns an object with `available`, so the UI has one shape to render.
+  const HORIZONS = [1, 4, 12]; // hours ahead
+  let prediction: any = {
+    available: false,
+    reason: 'No live forecast available',
+    horizons: [],
+  };
+
+  const model = buildModel(data.hourlyTrends);
+
+  if (!model) {
+    prediction = {
+      available: false,
+      reason: 'Insufficient rainfall variation to fit a model',
+      horizons: [],
+    };
+  } else if (weather && weather.forecast.length > 0) {
+    const horizons = HORIZONS
+      // forecast[0] is the NEXT hour, so +1h is index 0, +4h is index 3, etc.
+      .filter((h) => weather.forecast.length >= h)
+      .map((h) => predict(model, weather.forecast[h - 1], h));
+
+    prediction = {
+      available: horizons.length > 0,
+      model: describeModel(model),
+      speedFit: model.speedFit,
+      congestionFit: model.congestionFit,
+      observedRainfallMax: Number(model.rainfallMax.toFixed(1)),
+      horizons,
+    };
+  }
+
   res.json({
     ...data,
     weatherSource: weather ? 'live' : 'mock',
     airQualitySource: air ? 'live' : 'mock',
     trafficSource: traffic ? 'live' : 'mock',
+    prediction,
   });
 });
 
