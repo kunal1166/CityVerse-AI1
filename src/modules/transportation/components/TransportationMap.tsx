@@ -75,7 +75,7 @@ export const ROAD_TYPE_CONFIG: Record<RoadType, {
     shortLabel: 'Residential',
     description: 'Local access streets and low-speed residential roads',
     color: '#94A3B8',
-    badgeBg: 'bg-slate-500/20 text-slate-300 border-slate-500/40',
+    badgeBg: 'bg-slate-500/20 text-slate-700 border-slate-500/40',
   },
   Emergency: {
     label: 'Emergency Clearance Corridors',
@@ -111,6 +111,8 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layersGroupRef = useRef<L.LayerGroup | null>(null);
   const measureGroupRef = useRef<L.LayerGroup | null>(null);
+  const measureModeRef = useRef(false);
+  const drawRegionModeRef = useRef(false);
 
   // Map Controls & Operational Modes
   const [viewMode, setViewMode] = useState<ViewModeType>('flow');
@@ -133,6 +135,10 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
 
   // Timeline & Time scrubbing (06:00 to 22:00, stored in hours e.g. 8.5 = 08:30)
   const [timelineHour, setTimelineHour] = useState<number>(8.5);
+  // Scrubbing the timeline fires on every pixel of drag. The clock label reads
+  // `timelineHour` so it updates instantly, while the expensive map redraw reads
+  // this debounced value - keeping the drag smooth without feeling laggy.
+  const [debouncedTimelineHour, setDebouncedTimelineHour] = useState<number>(8.5);
   const [isPlayingTimeline, setIsPlayingTimeline] = useState<boolean>(false);
   const [showTimelineBar, setShowTimelineBar] = useState<boolean>(true);
 
@@ -183,6 +189,16 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
     setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // Leaflet event handlers are registered once, so keep the latest React state
+  // in refs instead of closing over the values from the initial render.
+  useEffect(() => {
+    measureModeRef.current = measureMode;
+  }, [measureMode]);
+
+  useEffect(() => {
+    drawRegionModeRef.current = drawRegionMode;
+  }, [drawRegionMode]);
+
   // Sync external scenario name if provided
   useEffect(() => {
     if (activeScenarioName) {
@@ -194,6 +210,12 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
       else if (activeScenarioName.includes('Bridge') || activeScenarioName.includes('Maintenance')) setScenarioMode('construction');
     }
   }, [activeScenarioName]);
+
+  // Debounce the timeline value that drives the heavy map rebuild.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedTimelineHour(timelineHour), 120);
+    return () => clearTimeout(t);
+  }, [timelineHour]);
 
   // Timeline Auto-Play Timer
   useEffect(() => {
@@ -329,8 +351,8 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
     const rawRoads = CITY_ROADS[selectedCity] || CITY_ROADS['singapore'];
 
     // Timeline factor: peak hours (8-9:30 AM, 5:30-7:30 PM) increase congestion
-    const isMorningPeak = timelineHour >= 8.0 && timelineHour <= 9.5;
-    const isEveningPeak = timelineHour >= 17.5 && timelineHour <= 19.5;
+    const isMorningPeak = debouncedTimelineHour >= 8.0 && debouncedTimelineHour <= 9.5;
+    const isEveningPeak = debouncedTimelineHour >= 17.5 && debouncedTimelineHour <= 19.5;
     const peakFactor = isMorningPeak ? 1.35 : isEveningPeak ? 1.45 : 1.0;
 
     // Scenario factor
@@ -373,7 +395,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
         travelTime: Math.round(road.normalTravelTime * (1 + finalCongestion / 60)),
       };
     });
-  }, [selectedCity, timelineHour, scenarioMode]);
+  }, [selectedCity, debouncedTimelineHour, scenarioMode]);
 
   // Road Type Filter Handlers & Counts
   const toggleRoadType = (type: RoadType) => {
@@ -631,6 +653,9 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
 
       L.control.zoom({ position: 'topright' }).addTo(map);
 
+      // Scale bar - standard on any professional GIS view.
+      L.control.scale({ position: 'bottomleft', imperial: false, maxWidth: 140 }).addTo(map);
+
       mapInstanceRef.current = map;
       layersGroupRef.current = L.layerGroup().addTo(map);
       measureGroupRef.current = L.layerGroup().addTo(map);
@@ -638,16 +663,24 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
       // Map Click Event Listener for Measure & Region Tools
       map.on('click', (e: L.LeafletMouseEvent) => {
         const { lat, lng } = e.latlng;
-        if (measureMode) {
+        if (measureModeRef.current) {
           setMeasurePoints((prev) => [...prev, [lat, lng]]);
-        } else if (drawRegionMode) {
+        } else if (drawRegionModeRef.current) {
           setRegionPoints((prev) => [...prev, [lat, lng]]);
         }
       });
     } else {
       mapInstanceRef.current.setView([cityConfig.lat, cityConfig.lng], cityConfig.zoom);
     }
-  }, [selectedCity, cityConfig, measureMode, drawRegionMode]);
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+        layersGroupRef.current = null;
+        measureGroupRef.current = null;
+      }
+    };
+  }, [selectedCity, cityConfig]);
 
   // Render All Map Elements
   useEffect(() => {
@@ -761,7 +794,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
           <div class="font-sans text-xs p-1">
             <div class="font-bold text-gray-900 border-b border-gray-200 pb-1 flex items-center justify-between gap-2">
               <span>${road.name}</span>
-              <span class="px-1.5 py-0.2 bg-slate-900 text-white rounded text-[9px] font-mono">${road.code}</span>
+              <span class="px-1.5 py-0.5 bg-slate-900 text-white rounded text-[9px] font-mono">${road.code}</span>
             </div>
             <div class="grid grid-cols-2 gap-x-3 gap-y-1 mt-1.5 text-[11px]">
               <div>Current Speed: <strong class="text-blue-700">${road.currentSpeed} km/h</strong></div>
@@ -776,10 +809,30 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
         `;
 
         mainLine.bindTooltip(tooltipHTML, { sticky: true });
-        mainLine.on('click', () => onSelectObject('road', road));
-
         flowLine.bindTooltip(tooltipHTML, { sticky: true });
-        flowLine.on('click', () => onSelectObject('road', road));
+
+        // --- Hover feedback -------------------------------------------------
+        // Without this the map only reacts to clicks, which makes it feel static.
+        // On hover we thicken and brighten the segment and lift it above its
+        // neighbours; on exit we restore the exact original style.
+        const highlightOn = () => {
+          casing.setStyle({ weight: weight + 6, opacity: 0.9 });
+          mainLine.setStyle({ weight: weight + 3, opacity: 1 });
+          casing.bringToFront();
+          mainLine.bringToFront();
+          flowLine.bringToFront();
+        };
+
+        const highlightOff = () => {
+          casing.setStyle({ weight: weight + 2, opacity: 0.6 });
+          mainLine.setStyle({ weight: weight, opacity: opacity.traffic });
+        };
+
+        [mainLine, flowLine].forEach((layer) => {
+          layer.on('mouseover', highlightOn);
+          layer.on('mouseout', highlightOff);
+          layer.on('click', () => onSelectObject('road', road));
+        });
 
         layersGroup.addLayer(mainLine);
         layersGroup.addLayer(flowLine);
@@ -1095,7 +1148,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
   };
 
   return (
-    <div className={`relative w-full h-full bg-slate-900 flex flex-col rounded-md overflow-hidden border border-slate-700 shadow-lg ${isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'min-h-[480px]'}`}>
+    <div className={`relative w-full h-full bg-white flex flex-col rounded-md overflow-hidden border border-slate-200 shadow-lg ${isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'min-h-[480px]'}`}>
       
       {/* CSS Animations for Traffic Dash Flow */}
       <style>{`
@@ -1126,21 +1179,21 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
         
         {/* Left Status Tag & Search */}
         <div className="flex items-center space-x-2">
-          <div className="bg-slate-900/95 text-white px-3 py-1.5 rounded shadow-lg text-[11px] font-bold flex items-center gap-2 border border-slate-700 backdrop-blur-md">
+          <div className="bg-white/95 text-slate-800 px-3 py-1.5 rounded shadow-lg text-[11px] font-bold flex items-center gap-2 border border-slate-200 backdrop-blur-md">
             <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
             <span>Traffic Operations GIS</span>
-            <span className="text-[10px] text-slate-400 font-mono font-semibold">({cityConfig.name})</span>
+            <span className="text-[10px] text-slate-500 font-mono font-semibold">({cityConfig.name})</span>
           </div>
 
           {/* Search Input Bar */}
           <div className="relative hidden md:flex items-center">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 pointer-events-none" />
             <input
               type="text"
               placeholder="Search roads, corridors..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-slate-900/90 text-white placeholder-slate-400 pl-8 pr-3 py-1 rounded text-xs border border-slate-700 focus:outline-none focus:border-blue-500 w-44 shadow-md font-sans"
+              className="bg-white/90 text-slate-800 placeholder-slate-400 pl-8 pr-3 py-1 rounded text-xs border border-slate-200 focus:outline-none focus:border-blue-500 w-44 shadow-md font-sans"
             />
           </div>
 
@@ -1154,7 +1207,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
         </div>
 
         {/* View Mode Switcher Tabs */}
-        <div className="hidden lg:flex items-center bg-slate-900/95 p-1 rounded-md border border-slate-700 shadow-xl backdrop-blur-md space-x-0.5 text-[10px]">
+        <div className="hidden lg:flex items-center bg-white/95 p-1 rounded-md border border-slate-200 shadow-xl backdrop-blur-md space-x-0.5 text-[10px]">
           {[
             { id: 'flow', label: 'Flow' },
             { id: 'congestion', label: 'Congestion' },
@@ -1169,7 +1222,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
               className={`px-2 py-1 rounded font-bold transition-all ${
                 viewMode === mode.id
                   ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                  : 'text-slate-700 hover:text-blue-700 hover:bg-blue-50'
               }`}
             >
               {mode.label}
@@ -1183,7 +1236,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
           <select
             value={scenarioMode}
             onChange={(e) => setScenarioMode(e.target.value as ScenarioType)}
-            className="bg-slate-900/95 text-white text-[10px] font-bold px-2 py-1.5 rounded border border-slate-700 shadow-md focus:outline-none cursor-pointer"
+            className="bg-white/95 text-slate-800 text-[10px] font-bold px-2 py-1.5 rounded border border-slate-200 shadow-md focus:outline-none cursor-pointer"
           >
             <option value="none">🎬 Normal Operations</option>
             <option value="heavy_rain">🌧️ Heavy Rain Scenario</option>
@@ -1198,7 +1251,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
           <button
             onClick={() => setShowRoutePlanner(!showRoutePlanner)}
             className={`px-2.5 py-1.5 rounded text-[11px] font-bold flex items-center gap-1.5 transition-colors border shadow-md ${
-              showRoutePlanner ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-slate-900/95 text-slate-200 border-slate-700 hover:bg-slate-800'
+              showRoutePlanner ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-white/95 text-slate-800 border-slate-200 hover:bg-blue-50'
             }`}
           >
             <Compass className="w-3.5 h-3.5 text-emerald-400" />
@@ -1213,7 +1266,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
             }}
             title="Measure Distance"
             className={`p-1.5 rounded border shadow-md text-xs font-bold transition-colors ${
-              measureMode ? 'bg-red-600 text-white border-red-500' : 'bg-slate-900/95 text-slate-300 border-slate-700 hover:bg-slate-800'
+              measureMode ? 'bg-red-600 text-white border-red-500' : 'bg-white/95 text-slate-700 border-slate-200 hover:bg-blue-50'
             }`}
           >
             <Ruler className="w-4 h-4" />
@@ -1227,7 +1280,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
             }}
             title="Inspect Region Bounding Box"
             className={`p-1.5 rounded border shadow-md text-xs font-bold transition-colors ${
-              drawRegionMode ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-900/95 text-slate-300 border-slate-700 hover:bg-slate-800'
+              drawRegionMode ? 'bg-blue-600 text-white border-blue-500' : 'bg-white/95 text-slate-700 border-slate-200 hover:bg-blue-50'
             }`}
           >
             <Square className="w-4 h-4" />
@@ -1247,7 +1300,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
             className={`px-2.5 py-1.5 rounded text-[11px] font-bold flex items-center gap-1.5 transition-all border shadow-md ${
               isGpsActive
                 ? 'bg-blue-600 text-white border-blue-400 shadow-blue-500/30'
-                : 'bg-slate-900/95 text-slate-200 border-slate-700 hover:bg-slate-800'
+                : 'bg-white/95 text-slate-800 border-slate-200 hover:bg-blue-50'
             }`}
           >
             {gpsLoading ? (
@@ -1267,7 +1320,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
           <button
             onClick={() => setShowRoadTypePanel(!showRoadTypePanel)}
             className={`px-2.5 py-1.5 rounded text-[11px] font-bold flex items-center gap-1.5 transition-colors border shadow-md ${
-              showRoadTypePanel ? 'bg-amber-600 text-white border-amber-500' : 'bg-slate-900/95 text-slate-200 border-slate-700 hover:bg-slate-800'
+              showRoadTypePanel ? 'bg-amber-600 text-white border-amber-500' : 'bg-white/95 text-slate-800 border-slate-200 hover:bg-blue-50'
             }`}
           >
             <Filter className="w-3.5 h-3.5 text-amber-400" />
@@ -1281,7 +1334,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
           <button
             onClick={() => setShowLayerPanel(!showLayerPanel)}
             className={`px-2.5 py-1.5 rounded text-[11px] font-bold flex items-center gap-1.5 transition-colors border shadow-md ${
-              showLayerPanel ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-900/95 text-slate-200 border-slate-700 hover:bg-slate-800'
+              showLayerPanel ? 'bg-blue-600 text-white border-blue-500' : 'bg-white/95 text-slate-800 border-slate-200 hover:bg-blue-50'
             }`}
           >
             <Layers className="w-3.5 h-3.5 text-blue-400" />
@@ -1292,7 +1345,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
           <button
             onClick={() => setShowTimelineBar(!showTimelineBar)}
             className={`px-2.5 py-1.5 rounded text-[11px] font-bold flex items-center gap-1.5 transition-colors border shadow-md ${
-              showTimelineBar ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-900/95 text-slate-200 border-slate-700 hover:bg-slate-800'
+              showTimelineBar ? 'bg-blue-600 text-white border-blue-500' : 'bg-white/95 text-slate-800 border-slate-200 hover:bg-blue-50'
             }`}
             title="Toggle Time Simulation Scrubbing Bar"
           >
@@ -1300,12 +1353,57 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
             <span className="hidden sm:inline">Timeline</span>
           </button>
 
+          {/* Congestion Legend - thresholds mirror getRoadColor() exactly.
+              If you change the colour logic there, change these labels too. */}
+          <div className="bg-white/95 border border-slate-200 rounded shadow-md px-2 py-1.5 space-y-1 backdrop-blur-md">
+            <div className="text-[8px] font-bold text-slate-500 uppercase tracking-wide leading-none">
+              {viewMode === 'congestion' ? 'Congestion' : 'Speed'}
+            </div>
+            {(viewMode === 'congestion'
+              ? [
+                  { c: '#16A34A', l: '< 30%' },
+                  { c: '#EAB308', l: '30-60%' },
+                  { c: '#EF4444', l: '60-85%' },
+                  { c: '#000000', l: 'Gridlock' },
+                ]
+              : [
+                  { c: '#16A34A', l: '> 60 km/h' },
+                  { c: '#EAB308', l: '40-60' },
+                  { c: '#F97316', l: '20-40' },
+                  { c: '#EF4444', l: '5-20' },
+                  { c: '#000000', l: 'Closed' },
+                ]
+            ).map((item) => (
+              <div key={item.l} className="flex items-center gap-1.5">
+                <span
+                  className="w-3 h-1.5 rounded-sm shrink-0"
+                  style={{ backgroundColor: item.c }}
+                />
+                <span className="text-[9px] text-slate-600 font-medium leading-none whitespace-nowrap">
+                  {item.l}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* North Arrow - standard GIS orientation marker */}
+          <div
+            title="North"
+            aria-hidden="true"
+            className="p-1.5 bg-white/95 border border-slate-200 rounded shadow-md flex flex-col items-center justify-center w-[30px] h-[30px]"
+          >
+            <svg viewBox="0 0 24 24" className="w-4 h-4 text-slate-700" fill="currentColor">
+              <path d="M12 2 L16 20 L12 16 L8 20 Z" />
+            </svg>
+            <span className="text-[7px] font-bold text-slate-600 leading-none -mt-0.5">N</span>
+          </div>
+
           {/* Recenter & Fullscreen */}
-          <button onClick={resetView} title="Recenter Map" className="p-1.5 bg-slate-900/95 text-slate-300 hover:bg-slate-800 border border-slate-700 rounded shadow-md">
+          <button onClick={resetView} title="Recenter Map" className="p-1.5 bg-white/95 text-slate-700 hover:bg-blue-50 border border-slate-200 rounded shadow-md">
             <Navigation className="w-4 h-4 text-blue-400" />
           </button>
 
-          <button onClick={() => setIsFullscreen(!isFullscreen)} title="Toggle Fullscreen" className="p-1.5 bg-slate-900/95 text-slate-300 hover:bg-slate-800 border border-slate-700 rounded shadow-md">
+          <button onClick={() => setIsFullscreen(!isFullscreen)} title="Toggle Fullscreen" className="p-1.5 bg-white/95 text-slate-700 hover:bg-blue-50 border border-slate-200 rounded shadow-md">
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
         </div>
@@ -1313,20 +1411,20 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
 
       {/* 2A. FLOATING LEAFLET ROAD TYPE LAYER CONTROL PANEL */}
       {showRoadTypePanel && (
-        <div className="absolute top-12 right-16 z-40 bg-slate-900/95 text-slate-100 backdrop-blur-md p-3.5 rounded-md border border-amber-500/60 shadow-2xl w-80 text-xs space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800 font-bold text-xs">
+        <div className="absolute top-12 right-16 z-40 bg-white/95 text-slate-900 backdrop-blur-md p-3.5 rounded-md border border-amber-500/60 shadow-2xl w-80 text-xs space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200 font-bold text-xs">
             <span className="flex items-center gap-1.5 text-amber-400">
               <Layers className="w-4 h-4 text-amber-400" /> Leaflet Road Type Control
             </span>
-            <span className="text-[10px] text-slate-400 font-mono font-normal">
+            <span className="text-[10px] text-slate-500 font-mono font-normal">
               {visibleRoadSegmentsCount}/{adjustedRoads.length} Active
             </span>
-            <button onClick={() => setShowRoadTypePanel(false)} className="text-slate-400 hover:text-white font-bold text-xs">✕</button>
+            <button onClick={() => setShowRoadTypePanel(false)} className="text-slate-500 hover:text-slate-900 font-bold text-xs">✕</button>
           </div>
 
           {/* Quick Presets Bar */}
           <div className="space-y-1">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
               <span>Quick Presets:</span>
               <div className="flex gap-1">
                 <button
@@ -1338,7 +1436,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
                 <span className="text-slate-600">•</span>
                 <button
                   onClick={clearAllRoadTypes}
-                  className="text-[9px] text-slate-400 hover:underline"
+                  className="text-[9px] text-slate-500 hover:underline"
                 >
                   Clear
                 </button>
@@ -1365,7 +1463,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
               </button>
               <button
                 onClick={() => applyRoadTypePreset('local')}
-                className="px-2 py-1 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold border border-slate-700 text-left truncate"
+                className="px-2 py-1 bg-blue-50/80 hover:bg-blue-100 text-slate-700 rounded text-[10px] font-bold border border-slate-200 text-left truncate"
               >
                 🏡 Local Network
               </button>
@@ -1374,7 +1472,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
 
           {/* Leaflet Layer Control Checkboxes */}
           <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Road Category Layers:</div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Road Category Layers:</div>
             {(Object.keys(ROAD_TYPE_CONFIG) as RoadType[]).map((type) => {
               const config = ROAD_TYPE_CONFIG[type];
               const isChecked = roadTypeFilters[type];
@@ -1385,8 +1483,8 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
                   key={type}
                   className={`flex items-center justify-between p-2 rounded border cursor-pointer transition-all ${
                     isChecked
-                      ? 'bg-slate-800/90 border-slate-600 shadow-xs'
-                      : 'bg-slate-950/50 border-slate-800/80 opacity-60 hover:opacity-100'
+                      ? 'bg-blue-50/90 border-slate-300 shadow-xs'
+                      : 'bg-slate-950/50 border-slate-200/80 opacity-60 hover:opacity-100'
                   }`}
                 >
                   <div className="flex items-center space-x-2.5 min-w-0 pr-2">
@@ -1394,17 +1492,17 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
                       type="checkbox"
                       checked={isChecked}
                       onChange={() => toggleRoadType(type)}
-                      className="w-3.5 h-3.5 rounded text-amber-500 focus:ring-amber-500 bg-slate-900 border-slate-700 cursor-pointer accent-amber-500 shrink-0"
+                      className="w-3.5 h-3.5 rounded text-amber-500 focus:ring-amber-500 bg-white border-slate-200 cursor-pointer accent-amber-500 shrink-0"
                     />
                     <span
                       className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs"
                       style={{ backgroundColor: config.color }}
                     />
                     <div className="min-w-0">
-                      <div className="font-bold text-[11px] text-white truncate">
+                      <div className="font-bold text-[11px] text-slate-800 truncate">
                         {config.label}
                       </div>
-                      <div className="text-[9px] text-slate-400 leading-tight truncate">
+                      <div className="text-[9px] text-slate-500 leading-tight truncate">
                         {config.description}
                       </div>
                     </div>
@@ -1422,8 +1520,8 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
 
       {/* 2C. GOOGLE MAPS & GPS TELEMETRY CONTROL PANEL */}
       {showGpsPanel && (
-        <div className="absolute top-12 right-12 z-40 bg-slate-900/95 text-slate-100 backdrop-blur-md p-4 rounded-md border border-blue-500/60 shadow-2xl w-84 text-xs space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800 font-bold text-xs">
+        <div className="absolute top-12 right-12 z-40 bg-white/95 text-slate-900 backdrop-blur-md p-4 rounded-md border border-blue-500/60 shadow-2xl w-84 text-xs space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200 font-bold text-xs">
             <span className="flex items-center gap-1.5 text-blue-400">
               <Crosshair className="w-4 h-4 text-blue-400" /> Google Maps GPS Telemetry
             </span>
@@ -1434,7 +1532,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
                   {userGpsLocation?.isSimulated ? 'Simulated GPS' : 'Browser GPS'}
                 </span>
               )}
-              <button onClick={() => setShowGpsPanel(false)} className="text-slate-400 hover:text-white font-bold text-xs">✕</button>
+              <button onClick={() => setShowGpsPanel(false)} className="text-slate-500 hover:text-slate-900 font-bold text-xs">✕</button>
             </div>
           </div>
 
@@ -1446,22 +1544,22 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
 
           {userGpsLocation ? (
             <div className="space-y-2.5">
-              <div className="grid grid-cols-2 gap-2 bg-slate-950/80 p-2.5 rounded border border-slate-800/80 font-mono text-[11px]">
+              <div className="grid grid-cols-2 gap-2 bg-slate-950/80 p-2.5 rounded border border-slate-200/80 font-mono text-[11px]">
                 <div>
-                  <span className="text-[9px] text-slate-400 uppercase block font-sans">Latitude</span>
+                  <span className="text-[9px] text-slate-500 uppercase block font-sans">Latitude</span>
                   <span className="text-blue-300 font-bold">{userGpsLocation.lat.toFixed(5)}°</span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-slate-400 uppercase block font-sans">Longitude</span>
+                  <span className="text-[9px] text-slate-500 uppercase block font-sans">Longitude</span>
                   <span className="text-blue-300 font-bold">{userGpsLocation.lng.toFixed(5)}°</span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-slate-400 uppercase block font-sans">Speed</span>
+                  <span className="text-[9px] text-slate-500 uppercase block font-sans">Speed</span>
                   <span className="text-emerald-400 font-bold">{userGpsLocation.speed || 0} km/h</span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-slate-400 uppercase block font-sans">Accuracy</span>
-                  <span className="text-slate-200">±{userGpsLocation.accuracy}m</span>
+                  <span className="text-[9px] text-slate-500 uppercase block font-sans">Accuracy</span>
+                  <span className="text-slate-800">±{userGpsLocation.accuracy}m</span>
                 </div>
               </div>
 
@@ -1484,7 +1582,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
                 </a>
               </div>
 
-              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-800">
+              <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-200">
                 <button
                   onClick={simulateGpsPosition}
                   className="text-amber-400 hover:underline flex items-center gap-1"
@@ -1501,7 +1599,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
             </div>
           ) : (
             <div className="space-y-3 text-center py-2">
-              <p className="text-slate-300 text-[11px] leading-relaxed">
+              <p className="text-slate-700 text-[11px] leading-relaxed">
                 Connect your device's live GPS receiver to track position, current speed, and export turn-by-turn routes directly into <strong>Google Maps</strong>.
               </p>
               <div className="flex gap-2">
@@ -1519,7 +1617,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
                 </button>
                 <button
                   onClick={simulateGpsPosition}
-                  className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded font-bold text-[11px]"
+                  className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-slate-800 border border-slate-200 rounded font-bold text-[11px]"
                 >
                   Simulate GPS
                 </button>
@@ -1531,16 +1629,16 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
 
       {/* 2B. SLIDE-OUT LAYERS & OPACITY PANEL */}
       {showLayerPanel && (
-        <div className="absolute top-12 right-3 z-30 bg-slate-900/95 text-slate-100 backdrop-blur-md p-3.5 rounded-md border border-slate-700 shadow-2xl w-80 text-xs space-y-3">
-          <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 font-bold text-xs">
+        <div className="absolute top-12 right-3 z-30 bg-white/95 text-slate-900 backdrop-blur-md p-3.5 rounded-md border border-slate-200 shadow-2xl w-80 text-xs space-y-3">
+          <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 font-bold text-xs">
             <span className="flex items-center gap-1.5 text-blue-400">
               <Sliders className="w-4 h-4" /> GIS Layer Controls
             </span>
-            <button onClick={() => setShowLayerPanel(false)} className="text-slate-400 hover:text-white font-bold text-xs">✕</button>
+            <button onClick={() => setShowLayerPanel(false)} className="text-slate-500 hover:text-slate-900 font-bold text-xs">✕</button>
           </div>
 
           <div className="space-y-2 max-h-80 overflow-y-auto pr-1 text-[11px]">
-            <div className="font-bold text-slate-300 text-[10px] uppercase tracking-wider">Data Overlays:</div>
+            <div className="font-bold text-slate-700 text-[10px] uppercase tracking-wider">Data Overlays:</div>
             <div className="grid grid-cols-2 gap-1.5">
               {(Object.keys(layers) as Array<keyof typeof layers>).map((key) => {
                 const isEnabled = layers[key];
@@ -1551,7 +1649,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
                     className={`flex items-center justify-between px-2 py-1 rounded text-[10px] font-semibold transition-colors border ${
                       isEnabled
                         ? 'bg-blue-900/60 text-blue-300 border-blue-600'
-                        : 'bg-slate-800/80 text-slate-400 border-slate-700 hover:bg-slate-800'
+                        : 'bg-blue-50/80 text-slate-500 border-slate-200 hover:bg-blue-50'
                     }`}
                   >
                     <span className="capitalize">{String(key).replace(/([A-Z])/g, ' $1')}</span>
@@ -1562,8 +1660,8 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
             </div>
 
             {/* Road Filter Selection */}
-            <div className="pt-2 border-t border-slate-800 space-y-2">
-              <div className="flex items-center justify-between font-bold text-slate-300 text-[10px]">
+            <div className="pt-2 border-t border-slate-200 space-y-2">
+              <div className="flex items-center justify-between font-bold text-slate-700 text-[10px]">
                 <span className="uppercase tracking-wider">Road Category Filtering:</span>
                 <span className="text-[9px] text-amber-400 font-mono">{activeRoadTypeCount}/7 Active</span>
               </div>
@@ -1576,19 +1674,19 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
                   return (
                     <label
                       key={type}
-                      className="flex items-center justify-between p-1.5 bg-slate-800/60 rounded border border-slate-700/80 cursor-pointer hover:bg-slate-800 text-[10px]"
+                      className="flex items-center justify-between p-1.5 bg-blue-50/60 rounded border border-slate-200/80 cursor-pointer hover:bg-blue-50 text-[10px]"
                     >
                       <div className="flex items-center space-x-2 min-w-0">
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => toggleRoadType(type)}
-                          className="w-3 h-3 text-amber-500 rounded bg-slate-900 border-slate-700 accent-amber-500"
+                          className="w-3 h-3 text-amber-500 rounded bg-white border-slate-200 accent-amber-500"
                         />
                         <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: config.color }} />
                         <span className="text-white font-medium truncate">{config.label}</span>
                       </div>
-                      <span className="text-[9px] text-slate-400 font-mono">{count}</span>
+                      <span className="text-[9px] text-slate-500 font-mono">{count}</span>
                     </label>
                   );
                 })}
@@ -1600,12 +1698,12 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
 
       {/* 3. AI ROUTE PLANNER OVERLAY PANEL */}
       {showRoutePlanner && (
-        <div className="absolute top-12 left-3 z-30 bg-slate-900/95 text-slate-100 backdrop-blur-md p-3 rounded-md border border-slate-700 shadow-2xl w-80 text-xs space-y-2">
-          <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 font-bold text-xs">
+        <div className="absolute top-12 left-3 z-30 bg-white/95 text-slate-900 backdrop-blur-md p-3 rounded-md border border-slate-200 shadow-2xl w-80 text-xs space-y-2">
+          <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 font-bold text-xs">
             <span className="flex items-center gap-1.5 text-emerald-400">
               <Compass className="w-4 h-4" /> AI Multi-Path Route Optimizer
             </span>
-            <button onClick={() => setShowRoutePlanner(false)} className="text-slate-400 hover:text-white font-bold text-xs">✕</button>
+            <button onClick={() => setShowRoutePlanner(false)} className="text-slate-500 hover:text-slate-900 font-bold text-xs">✕</button>
           </div>
 
           <div className="space-y-2">
@@ -1617,20 +1715,20 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
                   onClick={() => setSelectedRouteId(rt.id)}
                   className={`p-2 rounded border cursor-pointer transition-all ${
                     isSelected
-                      ? 'bg-slate-800 border-emerald-500 ring-1 ring-emerald-500/50'
-                      : 'bg-slate-950/70 border-slate-800 hover:bg-slate-800/80'
+                      ? 'bg-blue-50 border-emerald-500 ring-1 ring-emerald-500/50'
+                      : 'bg-slate-950/70 border-slate-200 hover:bg-blue-50/80'
                   }`}
                 >
                   <div className="flex items-center justify-between font-bold text-[11px]">
-                    <span className={rt.isRecommended ? 'text-emerald-400' : 'text-slate-200'}>{rt.name}</span>
+                    <span className={rt.isRecommended ? 'text-emerald-400' : 'text-slate-800'}>{rt.name}</span>
                     {rt.isRecommended && <span className="bg-emerald-900/80 text-emerald-300 text-[9px] px-1.5 py-0.2 rounded border border-emerald-700">AI Choice</span>}
                   </div>
-                  <div className="flex justify-between items-center text-[10px] text-slate-400 mt-1">
+                  <div className="flex justify-between items-center text-[10px] text-slate-500 mt-1">
                     <span>ETA: <strong className="text-white">{rt.durationMin} mins</strong></span>
-                    <span>Distance: <span className="text-slate-300 font-mono">{rt.distanceKm} km</span></span>
+                    <span>Distance: <span className="text-slate-700 font-mono">{rt.distanceKm} km</span></span>
                     <span>Tolls: <span className="text-amber-300">{rt.tollsCost}</span></span>
                   </div>
-                  <p className="text-[10px] text-slate-300 mt-1 italic bg-slate-900/80 p-1 rounded border border-slate-800">
+                  <p className="text-[10px] text-slate-700 mt-1 italic bg-white/80 p-1 rounded border border-slate-200">
                     "{rt.aiReasoning}"
                   </p>
                 </div>
@@ -1642,7 +1740,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
 
       {/* 4. REGION INSPECTION MODAL CARD */}
       {regionStats && (
-        <div className="absolute top-12 left-1/2 -translate-x-1/2 z-30 bg-slate-900/95 text-slate-100 p-2.5 rounded-md border border-blue-500 shadow-2xl flex items-center space-x-4 text-xs font-mono">
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 z-30 bg-white/95 text-slate-900 p-2.5 rounded-md border border-blue-500 shadow-2xl flex items-center space-x-4 text-xs font-mono">
           <div className="flex items-center gap-1.5 text-blue-400 font-bold">
             <Square className="w-4 h-4 text-blue-400" /> Bounding Region Telemetry:
           </div>
@@ -1657,8 +1755,8 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
       <div ref={mapContainerRef} className="w-full h-full z-0" />
 
       {/* 5. SMART LEGEND OVERLAY (BOTTOM LEFT) */}
-      <div className="absolute bottom-12 left-3 z-10 bg-slate-900/95 text-slate-100 backdrop-blur-md px-3 py-2 rounded-md border border-slate-700 shadow-xl text-[10px] flex items-center space-x-3.5">
-        <span className="font-bold text-slate-200 flex items-center gap-1">
+      <div className="absolute bottom-12 left-3 z-10 bg-white/95 text-slate-900 backdrop-blur-md px-3 py-2 rounded-md border border-slate-200 shadow-xl text-[10px] flex items-center space-x-3.5">
+        <span className="font-bold text-slate-800 flex items-center gap-1">
           <Activity className="w-3.5 h-3.5 text-blue-400" /> Live Legend:
         </span>
         <div className="flex items-center space-x-1">
@@ -1678,14 +1776,14 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
           <span>Heavy ({legendStats.redPct}%)</span>
         </div>
         <div className="flex items-center space-x-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-black inline-block border border-slate-600" />
+          <span className="w-2.5 h-2.5 rounded-full bg-black inline-block border border-slate-300" />
           <span>Closed ({legendStats.closedPct}%)</span>
         </div>
       </div>
 
       {/* 6. BOTTOM TIMELINE SCRUBBING CONTROL BAR */}
       {showTimelineBar && (
-        <div className="absolute bottom-2 left-2 right-2 z-10 bg-slate-900/95 text-slate-100 backdrop-blur-md px-3 py-1.5 rounded-md border border-slate-700 shadow-xl flex items-center justify-between gap-3 text-xs">
+        <div className="absolute bottom-2 left-2 right-2 z-10 bg-white/95 text-slate-900 backdrop-blur-md px-3 py-1.5 rounded-md border border-slate-200 shadow-xl flex items-center justify-between gap-3 text-xs">
           
           <div className="flex items-center space-x-2 shrink-0">
             <button
@@ -1699,19 +1797,19 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
             <button
               onClick={() => { setTimelineHour(8.5); setIsPlayingTimeline(false); }}
               title="Reset Timeline to Live"
-              className="p-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"
+              className="p-1 bg-blue-50 hover:bg-blue-100 text-slate-700 rounded"
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
 
-            <div className="font-mono text-[11px] font-bold text-blue-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+            <div className="font-mono text-[11px] font-bold text-blue-400 bg-blue-50 px-2 py-0.5 rounded border border-slate-200">
               {formatTimeStr(timelineHour)}
             </div>
           </div>
 
           {/* Timeline Scrubbing Slider */}
           <div className="flex-1 flex items-center space-x-2">
-            <span className="text-[10px] text-slate-400 font-mono">06:00 AM</span>
+            <span className="text-[10px] text-slate-500 font-mono">06:00 AM</span>
             <input
               type="range"
               min="6.0"
@@ -1719,12 +1817,12 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
               step="0.25"
               value={timelineHour}
               onChange={(e) => setTimelineHour(parseFloat(e.target.value))}
-              className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+              className="w-full h-1.5 bg-blue-50 rounded-lg appearance-none cursor-pointer accent-blue-500"
             />
-            <span className="text-[10px] text-slate-400 font-mono">10:00 PM</span>
+            <span className="text-[10px] text-slate-500 font-mono">10:00 PM</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-2 text-[10px] text-slate-400 font-mono shrink-0">
+          <div className="hidden md:flex items-center gap-2 text-[10px] text-slate-500 font-mono shrink-0">
             {(timelineHour >= 8 && timelineHour <= 9.5) || (timelineHour >= 17.5 && timelineHour <= 19.5) ? (
               <span className="text-amber-400 font-bold bg-amber-950 px-1.5 py-0.5 rounded border border-amber-800">
                 ⚡ Peak Commute Surge
@@ -1739,7 +1837,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
           <button
             onClick={() => setShowTimelineBar(false)}
             title="Dismiss Time Simulation Bar"
-            className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded text-xs font-bold shrink-0 transition-colors ml-1"
+            className="p-1 text-slate-500 hover:text-slate-900 hover:bg-blue-50 rounded text-xs font-bold shrink-0 transition-colors ml-1"
           >
             ✕
           </button>
@@ -1748,30 +1846,30 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
 
       {/* 7. TRANSIT STATION POPUP MODAL */}
       {selectedStation && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 bg-slate-900 text-slate-100 p-3.5 rounded-md border border-slate-700 shadow-2xl w-72 space-y-2 text-xs">
-          <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 font-bold">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 bg-white text-slate-900 p-3.5 rounded-md border border-slate-200 shadow-2xl w-72 space-y-2 text-xs">
+          <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 font-bold">
             <span className="flex items-center gap-1.5 text-purple-400">
               {selectedStation.type === 'Metro' ? <Train className="w-4 h-4" /> : <Bus className="w-4 h-4" />}
               {selectedStation.name}
             </span>
-            <button onClick={() => setSelectedStation(null)} className="text-slate-400 hover:text-white font-bold">✕</button>
+            <button onClick={() => setSelectedStation(null)} className="text-slate-500 hover:text-slate-900 font-bold">✕</button>
           </div>
 
           <div className="space-y-1 text-[11px]">
             <div className="flex justify-between">
-              <span className="text-slate-400">Line:</span>
-              <strong className="text-slate-200">{selectedStation.line}</strong>
+              <span className="text-slate-500">Line:</span>
+              <strong className="text-slate-800">{selectedStation.line}</strong>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Ridership:</span>
+              <span className="text-slate-500">Ridership:</span>
               <strong className="text-emerald-400">{selectedStation.passengersPerHour.toLocaleString()} passengers/hr</strong>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Next Arrival:</span>
+              <span className="text-slate-500">Next Arrival:</span>
               <strong className="text-blue-400 font-mono">In {selectedStation.nextArrivalMin} mins</strong>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Status:</span>
+              <span className="text-slate-500">Status:</span>
               <span className="px-1.5 py-0.2 bg-emerald-900/80 text-emerald-300 font-bold rounded text-[10px]">
                 {selectedStation.status}
               </span>
