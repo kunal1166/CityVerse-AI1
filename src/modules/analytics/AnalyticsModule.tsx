@@ -10,29 +10,9 @@ export const AnalyticsModule: React.FC = () => {
   const hourlyTrends = dashboardData?.hourlyTrends || [];
   const prediction = dashboardData?.prediction;
 
-  const correlations = [
-    {
-      metricA: 'Rainfall Rate (mm/h)',
-      metricB: 'Avg Traffic Speed (km/h)',
-      coefficient: -0.84,
-      impactLevel: 'Strong Inverse',
-      insight: 'Heavy precipitation exceeding 15 mm/h reduces arterial vehicle speeds by 38% on average.',
-    },
-    {
-      metricA: 'Congestion Index (%)',
-      metricB: 'PM2.5 Pollution (µg/m³)',
-      coefficient: +0.78,
-      impactLevel: 'Strong Direct',
-      insight: 'Traffic gridlock at key intersections correlates directly with localized PM2.5 spikes.',
-    },
-    {
-      metricA: 'Metro Service Delay (mins)',
-      metricB: 'Expressway Vehicle Count',
-      coefficient: +0.62,
-      impactLevel: 'Moderate Direct',
-      insight: 'Metro delays over 10 mins trigger a +14% surge in ride-hailing and private car volume.',
-    },
-  ];
+  // Computed on the server with the same regression used by the prediction
+  // model, so the rainfall/speed coefficient here always matches the widget below.
+  const correlations = dashboardData?.correlations || [];
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 space-y-4 bg-[#F4F6F8] text-xs">

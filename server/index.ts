@@ -11,7 +11,7 @@ import { getCityDashboardData, injectCityIncident, resolveCityIncident } from '.
 import { getLiveWeather } from './liveWeather.js';
 import { getLiveAirQuality } from './liveAirQuality.js';
 import { getLiveTraffic, logTrafficStatus } from './liveTraffic.js';
-import { buildModel, predict, describeModel } from './predictionModel.js';
+import { buildModel, predict, describeModel, computeCorrelations } from './predictionModel.js';
 import { CityId } from '../src/types/index.js';
 
 const app = express();
@@ -83,6 +83,9 @@ app.get('/api/dashboard', async (req, res) => {
     airQualitySource: air ? 'live' : 'mock',
     trafficSource: traffic ? 'live' : 'mock',
     prediction,
+    // Computed with the same least-squares routine as `prediction`, so the
+    // rainfall/speed coefficient shown in the matrix always matches the model.
+    correlations: computeCorrelations(data.hourlyTrends),
   });
 });
 
@@ -178,9 +181,7 @@ app.get('/api/analytics', (req, res) => {
     cityId,
     trends: data.hourlyTrends,
     correlations: [
-      { metricA: 'Rainfall Rate (mm/h)', metricB: 'Avg Traffic Speed (km/h)', coefficient: -0.84, insight: 'Heavy rainfall (>15mm/h) reduces arterial traffic speeds by 38% on average.' },
-      { metricA: 'Congestion Index (%)', metricB: 'PM2.5 Level (µg/m³)', coefficient: 0.78, insight: 'Traffic gridlock correlates strongly with PM2.5 spikes around downtown intersections.' },
-      { metricA: 'Public Transit Delays', metricB: 'Expressway Vehicle Count', coefficient: 0.62, insight: 'Metro delays above 10 mins trigger +14% private vehicle volume influx on expressways.' },
+      ...computeCorrelations(data.hourlyTrends),
     ],
   });
 });

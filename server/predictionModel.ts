@@ -128,6 +128,99 @@ export function predict(
   };
 }
 
+export interface CorrelationPair {
+  metricA: string;
+  metricB: string;
+  coefficient: number;
+  impactLevel: string;
+  insight: string;
+}
+
+/** Strength/direction label derived from r, so the two can never disagree. */
+function impactLabel(r: number): string {
+  const m = Math.abs(r);
+  const strength = m >= 0.7 ? 'Strong' : m >= 0.4 ? 'Moderate' : 'Weak';
+  return `${strength} ${r < 0 ? 'Inverse' : 'Direct'}`;
+}
+
+/**
+ * Correlations for the analytics matrix, computed with the SAME least-squares
+ * routine used by the prediction model. This is deliberate: the rainfall/speed
+ * coefficient shown here must match the one the prediction widget reports, and
+ * the only way to guarantee that is to compute it once.
+ *
+ * Pairs that cannot be fitted (no variance) are omitted rather than shown as
+ * a misleading zero.
+ */
+export function computeCorrelations(
+  trends: {
+    rainfall: number;
+    avgSpeed: number;
+    congestion: number;
+    aqi: number;
+    vehicleVolume: number;
+  }[],
+): CorrelationPair[] {
+  if (!trends || trends.length < 3) return [];
+
+  const n = trends.length;
+  const col = {
+    rainfall: trends.map((t) => t.rainfall),
+    avgSpeed: trends.map((t) => t.avgSpeed),
+    congestion: trends.map((t) => t.congestion),
+    aqi: trends.map((t) => t.aqi),
+    vehicleVolume: trends.map((t) => t.vehicleVolume),
+  };
+
+  const specs: {
+    metricA: string;
+    metricB: string;
+    xs: number[];
+    ys: number[];
+    positive: string;
+    negative: string;
+  }[] = [
+    {
+      metricA: 'Rainfall Rate (mm/h)',
+      metricB: 'Avg Traffic Speed (km/h)',
+      xs: col.rainfall,
+      ys: col.avgSpeed,
+      negative: `Rising rainfall tracks falling arterial speed across ${n} sampled intervals.`,
+      positive: `No speed-suppressing rainfall signal across ${n} sampled intervals.`,
+    },
+    {
+      metricA: 'Congestion Index (%)',
+      metricB: 'Air Quality Index (AQI)',
+      xs: col.congestion,
+      ys: col.aqi,
+      positive: `Congestion peaks coincide with degrading air quality across ${n} intervals.`,
+      negative: `Congestion and air quality move independently across ${n} intervals.`,
+    },
+    {
+      metricA: 'Vehicle Volume (count)',
+      metricB: 'Congestion Index (%)',
+      xs: col.vehicleVolume,
+      ys: col.congestion,
+      positive: `Throughput volume scales with congestion build-up across ${n} intervals.`,
+      negative: `Volume rises without proportional congestion across ${n} intervals.`,
+    },
+  ];
+
+  const out: CorrelationPair[] = [];
+  for (const s of specs) {
+    const fit = fitLinear(s.xs, s.ys);
+    if (!fit) continue; // no variance -> omit rather than fake a zero
+    out.push({
+      metricA: s.metricA,
+      metricB: s.metricB,
+      coefficient: fit.r,
+      impactLevel: impactLabel(fit.r),
+      insight: fit.r < 0 ? s.negative : s.positive,
+    });
+  }
+  return out;
+}
+
 /** One-line, demo-safe description of the model. Shown instead of a fake name. */
 export function describeModel(model: PredictionModel): string {
   const f = model.speedFit;
