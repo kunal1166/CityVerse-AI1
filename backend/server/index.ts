@@ -380,6 +380,40 @@ async function startServer() {
     logProviderStatus();
     logTrafficStatus();
   });
+
+// Add this route securely inside your backend/server/index.ts file near your other app.post / app.get methods:
+
+app.post('/api/agent/analyze-environment', async (req, res) => {
+  try {
+    const { region, pastAvgTemp, humidity } = req.body;
+    
+    const projectedTemp = Number((pastAvgTemp + 1.7).toFixed(1));
+    let riskLevel = 'Nominal';
+    let directive = `Agentic AI Analysis for ${region}: Historical baseline is stable at ${pastAvgTemp}°C. Routine telemetry monitoring active.`;
+
+    if (projectedTemp > 28) {
+      riskLevel = 'Critical Heat Risk';
+      directive = `Agentic AI Autonomous Decision: Severe Urban Heat Island surge projected for ${region} (${projectedTemp}°C). Activating regional cooling corridors and smart-grid energy balancing.`;
+    } else if (projectedTemp > 25) {
+      riskLevel = 'Moderate Thermal Warning';
+      directive = `Agentic AI Autonomous Decision: Elevated thermal index detected in ${region}. Re-allocating municipal resources and optimizing public microclimate shelters.`;
+    }
+
+    res.json({
+      success: true,
+      region,
+      pastAvgTemp,
+      projectedTemp,
+      humidity,
+      riskLevel,
+      aiDirective: directive,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('AI Agent execution error:', error);
+    res.status(500).json({ success: false, error: 'AI Agent failed to evaluate telemetry' });
+  }
+});
 }
 
 startServer();

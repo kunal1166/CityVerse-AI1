@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Search, Bell, Clock, AlertTriangle, ChevronDown, Radio, Activity, RefreshCw } from 'lucide-react';
+import { Menu, Search, AlertTriangle, ChevronDown, Clock, RefreshCw } from 'lucide-react';
 import { useCityStore, CITIES_CONFIG } from '../store/useCityStore';
 import { CityId } from '../types';
 import { CityVerseLogo } from './CityVerseLogo';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onToggleSidebar?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { 
     selectedCity, 
     setSelectedCity, 
@@ -12,11 +16,8 @@ export const Header: React.FC = () => {
     setSearchQuery, 
     emergencyMode, 
     setEmergencyMode, 
-    dashboardData, 
     fetchDashboardData, 
-    isLoading,
-    setQuickActionModalOpen,
-    activeTab
+    isLoading 
   } = useCityStore();
 
   const [time, setTime] = useState<string>('');
@@ -36,8 +37,18 @@ export const Header: React.FC = () => {
 
   return (
     <header className="h-14 bg-white border-b border-gray-200 px-4 flex items-center justify-between text-xs select-none sticky top-0 z-30 shadow-xs">
-      {/* Left: Brand & City Selector */}
-      <div className="flex items-center space-x-4">
+      {/* Left: Sidebar Toggle, Brand & City Selector */}
+      <div className="flex items-center space-x-3">
+        {onToggleSidebar && (
+          <button
+            onClick={onToggleSidebar}
+            className="p-1.5 rounded-md bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 transition-colors"
+            title="Toggle Sidebar"
+          >
+            <Menu className="w-4 h-4" />
+          </button>
+        )}
+
         {/* Logo */}
         <div className="flex items-center space-x-2">
           <CityVerseLogo height={32} />
@@ -110,7 +121,7 @@ export const Header: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={`Search incidents, districts (${currentCityConfig.keyDistricts[0]}, etc.), or sensors in ${currentCityConfig.name}...`}
+            placeholder={`Search incidents, districts, or sensors in ${currentCityConfig.name}...`}
             className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-xs rounded-md pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white placeholder-gray-400 transition-all"
           />
           {searchQuery && (
@@ -126,7 +137,6 @@ export const Header: React.FC = () => {
 
       {/* Right: Emergency Mode & Clock */}
       <div className="flex items-center space-x-3">
-        {/* Emergency Response Mode Toggle */}
         <button
           onClick={() => setEmergencyMode(!emergencyMode)}
           className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md font-semibold text-xs border transition-colors ${
@@ -142,7 +152,6 @@ export const Header: React.FC = () => {
 
         <div className="h-5 w-px bg-gray-200" />
 
-        {/* Clock */}
         <div className="flex items-center space-x-1.5 text-gray-600 font-mono bg-gray-50 px-2 py-1 rounded border border-gray-200">
           <Clock className="w-3.5 h-3.5 text-gray-500" />
           <span className="font-semibold text-gray-800 text-xs">{time}</span>

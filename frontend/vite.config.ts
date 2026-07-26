@@ -11,6 +11,10 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    // Explicitly tell Vite to skip pre-bundling MapLibre's workers to fix the crash
+    optimizeDeps: {
+      exclude: ['maplibre-gl'],
+    },
     server: {
       port: 5173,
       hmr: true,

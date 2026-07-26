@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { CityId, CityDashboardData, RoadIncident } from '../types';
 
-export type TabType = 'overview' | 'transportation' | 'environment' | 'analytics' | 'reports' | 'settings';
+// Change line 4 to include 'taiwan3d'
+export type TabType = 'overview' | 'transportation' | 'environment' | 'analytics' | 'reports' | 'settings' | 'taiwan3d';
 
 export interface MapLayerState {
   traffic: boolean;
@@ -26,6 +27,9 @@ interface CityState {
   emergencyMode: boolean;
   quickActionModalOpen: boolean;
   selectedIncident: RoadIncident | null;
+  
+  // Added global sidebar state for cleaner architecture
+  isSidebarOpen: boolean;
 
   // Actions
   setSelectedCity: (city: CityId) => void;
@@ -40,6 +44,7 @@ interface CityState {
   setEmergencyMode: (mode: boolean) => void;
   setQuickActionModalOpen: (open: boolean) => void;
   setSelectedIncident: (incident: RoadIncident | null) => void;
+  toggleSidebar: () => void;
   
   // API triggers
   fetchDashboardData: (cityId?: CityId) => Promise<void>;
@@ -107,6 +112,7 @@ export const useCityStore = create<CityState>((set, get) => ({
   emergencyMode: false,
   quickActionModalOpen: false,
   selectedIncident: null,
+  isSidebarOpen: true,
 
   // Only sets state. App.tsx has a useEffect keyed on selectedCity that performs
   // the fetch; calling it here as well caused two identical requests per switch.
@@ -134,6 +140,7 @@ export const useCityStore = create<CityState>((set, get) => ({
   setEmergencyMode: (mode) => set({ emergencyMode: mode }),
   setQuickActionModalOpen: (open) => set({ quickActionModalOpen: open }),
   setSelectedIncident: (incident) => set({ selectedIncident: incident }),
+  toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
 
   fetchDashboardData: async (cityId) => {
     const targetCity = cityId || get().selectedCity;

@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
+// @ts-ignore
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { Globe, ShieldCheck, Layers, ChevronUp, ChevronDown, Sparkles, Clock, Zap } from 'lucide-react';
 
 const TAIWAN_REGIONS = [

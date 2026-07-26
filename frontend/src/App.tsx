@@ -13,10 +13,18 @@ import { EnvironmentModule } from './modules/environment/EnvironmentModule';
 import { AnalyticsModule } from './modules/analytics/AnalyticsModule';
 import { ReportsModule } from './modules/reports/ReportsModule';
 import { SettingsModule } from './modules/settings/SettingsModule';
+import { Taiwan3DMap } from './components/Taiwan3DMap';
 
 export default function App() {
-  const { activeTab, fetchDashboardData, selectedCity, error, setError, isLoading } =
-    useCityStore();
+  const { 
+    activeTab, 
+    fetchDashboardData, 
+    selectedCity, 
+    error, 
+    setError, 
+    isLoading,
+    toggleSidebar
+  } = useCityStore();
 
   useEffect(() => {
     fetchDashboardData(selectedCity);
@@ -36,6 +44,8 @@ export default function App() {
         return <ReportsModule />;
       case 'settings':
         return <SettingsModule />;
+      case 'taiwan3d':
+        return <Taiwan3DMap />;
       default:
         return <DashboardModule />;
     }
@@ -44,7 +54,7 @@ export default function App() {
   return (
     <div className="h-screen w-screen flex flex-col bg-[#F4F6F8] text-gray-900 overflow-hidden font-['Inter',sans-serif]">
       {/* Top Bar */}
-      <Header />
+      <Header onToggleSidebar={toggleSidebar} />
 
       {/* Emergency Alert Banner (when active) */}
       <EmergencyAlertsTicker />

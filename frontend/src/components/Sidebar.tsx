@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Bus, CloudRain, BarChart3, FileText, GripVertical, Settings } from 'lucide-react';
+import { LayoutDashboard, Bus, CloudRain, BarChart3, FileText, GripVertical, Settings, Map } from 'lucide-react';
 import { Reorder } from 'motion/react';
 import { useCityStore, TabType } from '../store/useCityStore';
 
@@ -12,7 +12,7 @@ interface NavItem {
 }
 
 export const Sidebar: React.FC = () => {
-  const { activeTab, setActiveTab, dashboardData } = useCityStore();
+  const { activeTab, setActiveTab, dashboardData, isSidebarOpen } = useCityStore();
 
   const activeIncidentsCount = dashboardData?.incidents.filter(i => i.status === 'active').length || 0;
 
@@ -49,6 +49,12 @@ export const Sidebar: React.FC = () => {
       description: 'AI Executive Briefings & Exports',
     },
     {
+      id: 'taiwan3d',
+      label: 'Taiwan 3D',
+      icon: Map,
+      description: 'Pan-Taiwan Gemini Agent Simulator',
+    },
+    {
       id: 'settings',
       label: 'Settings',
       icon: Settings,
@@ -56,9 +62,7 @@ export const Sidebar: React.FC = () => {
     },
   ];
 
-  // Only the ORDER is stored in state. Previously the whole array was held in
-  // useState, which froze it at first render - so the incident badge never
-  // updated after mount. Deriving the items each render keeps badges live while
+  // Only the ORDER is stored in state. Deriving the items each render keeps badges live while
   // still preserving the user's drag-to-reorder order.
   const [order, setOrder] = useState<TabType[]>(initialNavItems.map((i) => i.id));
 
@@ -67,6 +71,9 @@ export const Sidebar: React.FC = () => {
     .filter((i): i is NavItem => Boolean(i));
 
   const handleReorder = (next: NavItem[]) => setOrder(next.map((i) => i.id));
+
+  // If the sidebar is toggled off globally, don't render it
+  if (!isSidebarOpen) return null;
 
   return (
     <aside className="w-56 bg-white border-r border-gray-200 flex flex-col justify-between shrink-0 select-none z-20">
