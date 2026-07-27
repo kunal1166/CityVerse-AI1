@@ -3,6 +3,7 @@ import L from 'leaflet';
 import { loadOsmGeometry, osmRoadsToSegments, type OsmGeometry } from '../lib/osmGeometry';
 import { useCityStore, CITIES_CONFIG } from '../../../store/useCityStore';
 import { CITY_ROADS, CITY_CAMERAS, SCENARIO_CONFIGS } from '../transportationData';
+import { useLiveRoads } from '../useLiveRoads';
 import { RoadSegment, TrafficCamera, SignalController, ScenarioType, RouteOption, RoadType } from '../transportationTypes';
 import { RoadIncident } from '../../../types';
 import { 
@@ -106,6 +107,10 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
   activeScenarioName,
 }) => {
   const { selectedCity, dashboardData, searchQuery, setSearchQuery } = useCityStore();
+
+  // Live per-road speeds from TomTom. `flows` is empty when there's no API
+  // key, in which case the built-in CITY_ROADS numbers are used unchanged.
+  const { flows: liveRoadFlows, isLive: roadsAreLive } = useLiveRoads(selectedCity);
   const cityConfig = CITIES_CONFIG[selectedCity] || CITIES_CONFIG['taipei'];
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -274,7 +279,29 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
 
   // Adjust road metrics dynamically based on timelineHour & scenarioMode
   const adjustedRoads = useMemo(() => {
-    const rawRoads = CITY_ROADS[selectedCity] || CITY_ROADS['taipei'];
+    // Start from the built-in road definitions (names, codes, geometry), then
+    // overwrite the *measured* fields with live TomTom readings where we have
+    // them. Timeline and scenario maths below then run on real numbers.
+    const rawRoads = (CITY_ROADS[selectedCity] || CITY_ROADS['taipei']).map((road) => {
+      const live = liveRoadFlows[road.id];
+      if (!live) return road;
+      return {
+        ...road,
+        currentSpeed: live.currentSpeed,
+        avgSpeed: live.freeFlowSpeed,
+        congestionIndex: live.congestionIndex,
+        travelTime: live.travelTime,
+        normalTravelTime: live.normalTravelTime,
+        density:
+          live.congestionIndex >= 80
+            ? ('Gridlock' as const)
+            : live.congestionIndex >= 55
+            ? ('Heavy' as const)
+            : live.congestionIndex >= 30
+            ? ('Moderate' as const)
+            : ('Fluid' as const),
+      };
+    });
 
     // Timeline factor: peak hours (8-9:30 AM, 5:30-7:30 PM) increase congestion
     const isMorningPeak = debouncedTimelineHour >= 8.0 && debouncedTimelineHour <= 9.5;
@@ -331,7 +358,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
         travelTime: Math.round(road.normalTravelTime * (1 + finalCongestion / 60)),
       };
     });
-  }, [selectedCity, debouncedTimelineHour, scenarioMode, osmGeometry]);
+  }, [selectedCity, debouncedTimelineHour, scenarioMode, osmGeometry, liveRoadFlows]);
 
   // Road Type Filter Handlers & Counts
   const toggleRoadType = (type: RoadType) => {
@@ -1104,6 +1131,20 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
 
       {/* 1. TOP HEADER GIS CONTROL BAR */}
       <div className="absolute top-2 left-2 right-2 z-20 flex flex-wrap items-center justify-between gap-1.5 pointer-events-auto">
+        <div
+          className={`absolute -top-0.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold border ${
+            roadsAreLive
+              ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/50'
+              : 'bg-slate-500/15 text-slate-300 border-slate-500/50'
+          }`}
+          title={
+            roadsAreLive
+              ? 'Road speeds are live from TomTom'
+              : 'No TOMTOM_API_KEY - showing built-in road data'
+          }
+        >
+          {roadsAreLive ? 'LIVE ROAD DATA' : 'SIMULATED ROAD DATA'}
+        </div>
         
         {/* Left Status Tag & Search */}
         <div className="flex items-center space-x-2">
