@@ -75,7 +75,7 @@ Urban arterial corridors are currently operating under ${
             <Bus className="w-5 h-5 text-blue-400" />
             <div>
               <div className="font-bold text-sm">National Traffic Operations Executive Briefing</div>
-              <div className="text-[10px] text-slate-400 font-mono">Singapore LTA & Smart City Command Format</div>
+              <div className="text-[10px] text-slate-400 font-mono">Taipei City Traffic & Smart City Command Format</div>
             </div>
           </div>
 

@@ -74,6 +74,7 @@ const providers = [
   ['openai', 'OPENAI_API_KEY', 'OpenAI'],
   ['groq', 'GROQ_API_KEY', 'Groq'],
   ['openrouter', 'OPENROUTER_API_KEY', 'OpenRouter'],
+  ['gemini', 'GEMINI_API_KEY', 'Google Gemini'],
 ];
 
 const explicit = readVar('AI_PROVIDER').toLowerCase();
@@ -99,6 +100,14 @@ if (explicit === 'ollama') {
   console.log(`  ${yellow('--')}  No AI key set — running in offline briefing mode`);
   console.log(`        This is fine for a demo. Add a key to .env.local for live AI.`);
   console.log(`        Free option: get a Groq key at https://console.groq.com/keys`);
+}
+
+// 5. Gemini is used by a separate endpoint, so check it independently.
+if (readVar('GEMINI_API_KEY')) {
+  console.log(`  ${green('OK')}  GEMINI_API_KEY set (model: ${readVar('GEMINI_MODEL') || 'gemini-2.0-flash'})`);
+} else {
+  console.log(`  ${yellow('--')}  No GEMINI_API_KEY — /api/agent/analyze-environment will fail`);
+  console.log(`        Free key: https://aistudio.google.com/apikey`);
 }
 
 console.log(bold('\n  Ready. Start the app with: npm run dev\n'));

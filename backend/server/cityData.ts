@@ -1,18 +1,6 @@
-import { CityDashboardData, CityId, RoadIncident, EnvironmentalSensor, PublicTransitLine, AiRecommendation, CityTimelineEvent, HourlyTrendPoint } from '../src/types';
+import { CityConfig, CityDashboardData, CityId, RoadIncident, EnvironmentalSensor, PublicTransitLine, AiRecommendation, CityTimelineEvent, HourlyTrendPoint } from '../shared/types';
 
-export const CITIES = {
-  singapore: {
-    id: 'singapore' as CityId,
-    name: 'Singapore',
-    country: 'Singapore',
-    flag: '🇸🇬',
-    lat: 1.3521,
-    lng: 103.8198,
-    zoom: 12,
-    timezone: 'Asia/Singapore (SGT UTC+8)',
-    population: '5.92M',
-    keyDistricts: ['Marina Bay', 'Orchard Road', 'Jurong East', 'Changi', 'Woodlands', 'Paya Lebar'],
-  },
+export const CITIES: Record<CityId, CityConfig> = {
   taipei: {
     id: 'taipei' as CityId,
     name: 'Taipei',
@@ -25,69 +13,10 @@ export const CITIES = {
     population: '2.50M',
     keyDistricts: ['Xinyi District', 'Daan District', 'Neihu Tech Park', 'Zhongshan', 'Songshan', 'Wanhua'],
   },
-  bengaluru: {
-    id: 'bengaluru' as CityId,
-    name: 'Bengaluru',
-    country: 'India',
-    flag: '🇮🇳',
-    lat: 12.9716,
-    lng: 77.5946,
-    zoom: 12,
-    timezone: 'Asia/Kolkata (IST UTC+5:30)',
-    population: '13.19M',
-    keyDistricts: ['ORR Electronic City', 'Whitefield', 'Indiranagar', 'Hebbal', 'Koramangala', 'Central Silk Board'],
-  },
 };
 
 // State storage per city
 const dynamicIncidents: Record<CityId, RoadIncident[]> = {
-  singapore: [
-    {
-      id: 'INC-SG-101',
-      cityId: 'singapore',
-      title: 'PIE Expressway Vehicle Stalls',
-      type: 'congestion',
-      severity: 'major',
-      locationName: 'Pan Island Expressway (PIE) near Toa Payoh Flyover',
-      coordinates: [1.3320, 103.8480],
-      timestamp: '12 mins ago',
-      estimatedResolution: '25 mins',
-      status: 'active',
-      affectedLanes: 2,
-      description: 'Heavy congestion building up on Lane 1 & 2 due to a disabled multi-axle trailer.',
-      recommendedAction: 'Adjust VMS message boards at Kallang Way and reroute to MacRitchie Viaduct.',
-    },
-    {
-      id: 'INC-SG-102',
-      cityId: 'singapore',
-      title: 'Flash Flood Watch - Sensor Triggered',
-      type: 'closure',
-      severity: 'critical',
-      locationName: 'Dunearn Road / Bukit Timah Junction',
-      coordinates: [1.3250, 103.8110],
-      timestamp: '5 mins ago',
-      estimatedResolution: '40 mins',
-      status: 'active',
-      affectedLanes: 3,
-      description: 'Water level reached 82% capacity in Rochor Canal drain box after sudden downpour.',
-      recommendedAction: 'Dispatch PUB Quick Response Team and trigger automated drainage pumps.',
-    },
-    {
-      id: 'INC-SG-103',
-      cityId: 'singapore',
-      title: 'North-South Line Signal Calibration',
-      type: 'transit_delay',
-      severity: 'minor',
-      locationName: 'Bishan MRT Interchange',
-      coordinates: [1.3508, 103.8482],
-      timestamp: '18 mins ago',
-      estimatedResolution: '15 mins',
-      status: 'in_progress',
-      affectedLanes: 0,
-      description: 'Headway extended by 3 minutes due to automated signaling verification.',
-      recommendedAction: 'Deploy extra feeder buses at Bishan Bus Interchange.',
-    },
-  ],
   taipei: [
     {
       id: 'INC-TP-201',
@@ -120,96 +49,14 @@ const dynamicIncidents: Record<CityId, RoadIncident[]> = {
       recommendedAction: 'Activate tidal lane controls across Minquan Bridge.',
     },
   ],
-  bengaluru: [
-    {
-      id: 'INC-BLR-301',
-      cityId: 'bengaluru',
-      title: 'Silk Board Junction Bottleneck Spillover',
-      type: 'congestion',
-      severity: 'critical',
-      locationName: 'Central Silk Board Flyover & Hosur Road Ramp',
-      coordinates: [12.9175, 77.6238],
-      timestamp: '14 mins ago',
-      estimatedResolution: '50 mins',
-      status: 'active',
-      affectedLanes: 4,
-      description: 'Traffic speed dropped below 8 km/h across Outer Ring Road interchange.',
-      recommendedAction: 'Prioritize traffic police signal override at HSR Layout 27th Main signal.',
-    },
-    {
-      id: 'INC-BLR-302',
-      cityId: 'bengaluru',
-      title: 'Underpass Waterlogging Warning',
-      type: 'closure',
-      severity: 'major',
-      locationName: 'Hebbal Flyover Underpass / Bellary Road',
-      coordinates: [13.0358, 77.5970],
-      timestamp: '28 mins ago',
-      estimatedResolution: '45 mins',
-      status: 'in_progress',
-      affectedLanes: 2,
-      description: 'Heavy precipitation causing 25cm water accumulation in underpass trough.',
-      recommendedAction: 'Deploy BBMP high-capacity dewatering pumps and diverters.',
-    },
-    {
-      id: 'INC-BLR-303',
-      cityId: 'bengaluru',
-      title: 'Metro Construction Lane Reduction',
-      type: 'construction',
-      severity: 'minor',
-      locationName: 'Whitefield Main Road near ITPL Gate 2',
-      coordinates: [12.9860, 77.7380],
-      timestamp: '1 hour ago',
-      estimatedResolution: 'Ongoing',
-      status: 'active',
-      affectedLanes: 1,
-      description: 'Right lane barricaded for pier girder installation work.',
-      recommendedAction: 'Enforce no parking within 200m radius to maintain 2 lane flow.',
-    },
-  ],
 };
 
 export function getCityDashboardData(cityId: CityId): CityDashboardData {
-  const city = CITIES[cityId] || CITIES.singapore;
+  const city = CITIES[cityId] || CITIES.taipei;
   const incidents = dynamicIncidents[cityId] || [];
 
   // Tailored metrics for each smart city
   const metricsMap = {
-    singapore: {
-      traffic: {
-        congestionIndex: 42,
-        avgSpeed: 48.5,
-        vehicleCount: 184200,
-        bottleneckCount: 3,
-        incidentCount: incidents.filter(i => i.status === 'active').length,
-        publicTransitOnTime: 99.1,
-        peakHourComparison: -3.2,
-      },
-      environment: {
-        aqi: 38,
-        aqiStatus: 'Good' as const,
-        temp: 31.4,
-        humidity: 82,
-        rainfallRate: 14.2,
-        floodRiskLevel: 'Moderate' as const,
-        aqiBreakdown: { pm25: 12, pm10: 24, no2: 18, so2: 6, co: 0.4, o3: 28 },
-        windSpeed: 14,
-        windDirection: 'SSW',
-      },
-      sensors: [
-        { id: 'SEN-SG-01', cityId: 'singapore' as CityId, name: 'Rochor Canal Water Stage', type: 'flood_stage' as const, coordinates: [1.3050, 103.8540] as [number, number], value: 1.84, unit: 'm', status: 'warning' as const, lastUpdated: '2 mins ago', district: 'Marina Bay' },
-        { id: 'SEN-SG-02', cityId: 'singapore' as CityId, name: 'Bukit Timah Drainage Meter', type: 'flood_stage' as const, coordinates: [1.3260, 103.8120] as [number, number], value: 2.15, unit: 'm', status: 'critical' as const, lastUpdated: '1 min ago', district: 'Bukit Timah' },
-        { id: 'SEN-SG-03', cityId: 'singapore' as CityId, name: 'NEA Changi AQI Station', type: 'aqi' as const, coordinates: [1.3640, 103.9910] as [number, number], value: 32, unit: 'AQI', status: 'normal' as const, lastUpdated: '5 mins ago', district: 'Changi' },
-        { id: 'SEN-SG-04', cityId: 'singapore' as CityId, name: 'Jurong Industrial Pollution Monitor', type: 'aqi' as const, coordinates: [1.3180, 103.7060] as [number, number], value: 52, unit: 'AQI', status: 'normal' as const, lastUpdated: '3 mins ago', district: 'Jurong East' },
-        { id: 'SEN-SG-05', cityId: 'singapore' as CityId, name: 'CTE Traffic Camera #14', type: 'traffic_camera' as const, coordinates: [1.3500, 103.8500] as [number, number], value: 68, unit: 'veh/min', status: 'normal' as const, lastUpdated: 'Just now', district: 'Toa Payoh' },
-      ],
-      transit: [
-        { id: 'TR-SG-01', name: 'North-South Line (NSL)', type: 'MRT' as const, status: 'Normal' as const, occupancyRate: 74, onTimePercentage: 99.4, activeVehicles: 48, disruptionsCount: 0 },
-        { id: 'TR-SG-02', name: 'East-West Line (EWL)', type: 'MRT' as const, status: 'Normal' as const, occupancyRate: 81, onTimePercentage: 99.2, activeVehicles: 52, disruptionsCount: 0 },
-        { id: 'TR-SG-03', name: 'Downtown Line (DTL)', type: 'MRT' as const, status: 'Normal' as const, occupancyRate: 62, onTimePercentage: 99.8, activeVehicles: 38, disruptionsCount: 0 },
-        { id: 'TR-SG-04', name: 'SBS Transit Bus Route 190', type: 'Bus' as const, status: 'Minor Delay' as const, occupancyRate: 88, onTimePercentage: 94.2, activeVehicles: 24, disruptionsCount: 1 },
-      ],
-    },
     taipei: {
       traffic: {
         congestionIndex: 58,
@@ -242,41 +89,9 @@ export function getCityDashboardData(cityId: CityId): CityDashboardData {
         { id: 'TR-TP-03', name: 'Wenhu Line (Brown Line)', type: 'MRT' as const, status: 'Normal' as const, occupancyRate: 85, onTimePercentage: 97.8, activeVehicles: 30, disruptionsCount: 0 },
       ],
     },
-    bengaluru: {
-      traffic: {
-        congestionIndex: 78,
-        avgSpeed: 18.4,
-        vehicleCount: 420000,
-        bottleneckCount: 11,
-        incidentCount: incidents.filter(i => i.status === 'active').length,
-        publicTransitOnTime: 86.5,
-        peakHourComparison: +12.4,
-      },
-      environment: {
-        aqi: 134,
-        aqiStatus: 'Unhealthy for Sensitive Groups' as const,
-        temp: 27.2,
-        humidity: 68,
-        rainfallRate: 28.5,
-        floodRiskLevel: 'High' as const,
-        aqiBreakdown: { pm25: 58, pm10: 112, no2: 68, so2: 18, co: 1.8, o3: 45 },
-        windSpeed: 8,
-        windDirection: 'SW',
-      },
-      sensors: [
-        { id: 'SEN-BLR-01', cityId: 'bengaluru' as CityId, name: 'Silk Board Junction AQI Array', type: 'aqi' as const, coordinates: [12.9170, 77.6230] as [number, number], value: 168, unit: 'AQI', status: 'critical' as const, lastUpdated: '2 mins ago', district: 'Central Silk Board' },
-        { id: 'SEN-BLR-02', cityId: 'bengaluru' as CityId, name: 'Hebbal Storm Drain Gauge', type: 'flood_stage' as const, coordinates: [13.0360, 77.5980] as [number, number], value: 2.85, unit: 'm', status: 'critical' as const, lastUpdated: 'Just now', district: 'Hebbal' },
-        { id: 'SEN-BLR-03', cityId: 'bengaluru' as CityId, name: 'Whitefield Traffic Sensor Node', type: 'traffic_camera' as const, coordinates: [12.9850, 77.7390] as [number, number], value: 115, unit: 'veh/min', status: 'warning' as const, lastUpdated: '4 mins ago', district: 'Whitefield' },
-      ],
-      transit: [
-        { id: 'TR-BLR-01', name: 'Namma Metro Purple Line', type: 'MRT' as const, status: 'Normal' as const, occupancyRate: 94, onTimePercentage: 96.2, activeVehicles: 32, disruptionsCount: 0 },
-        { id: 'TR-BLR-02', name: 'Namma Metro Green Line', type: 'MRT' as const, status: 'Normal' as const, occupancyRate: 88, onTimePercentage: 97.0, activeVehicles: 28, disruptionsCount: 0 },
-        { id: 'TR-BLR-03', name: 'BMTC Vajra Volvo Feeder Network', type: 'Bus' as const, status: 'Severe Delay' as const, occupancyRate: 96, onTimePercentage: 74.5, activeVehicles: 180, disruptionsCount: 6 },
-      ],
-    },
   };
 
-  const selectedMetrics = metricsMap[cityId] || metricsMap.singapore;
+  const selectedMetrics = metricsMap[cityId] || metricsMap.taipei;
 
   const recommendations: AiRecommendation[] = [
     {
@@ -357,7 +172,7 @@ export function getCityDashboardData(cityId: CityId): CityDashboardData {
 }
 
 export function injectCityIncident(cityId: CityId, incidentData: Partial<RoadIncident>): RoadIncident {
-  const city = CITIES[cityId] || CITIES.singapore;
+  const city = CITIES[cityId] || CITIES.taipei;
   const newIncident: RoadIncident = {
     id: `INC-${cityId.toUpperCase()}-${Date.now().toString().slice(-4)}`,
     cityId,

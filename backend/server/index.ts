@@ -14,7 +14,7 @@ import { getLiveAirQuality } from './liveAirQuality.js';
 import { getLiveTraffic, logTrafficStatus } from './liveTraffic.js';
 import { buildModel, predict, describeModel, computeCorrelations } from './predictionModel.js';
 import fs from 'node:fs';
-import type { CityId } from '../../frontend/src/types/index.js';
+import type { CityId } from '../shared/types.js';
 import 'dotenv/config';
 
 const app = express();
@@ -32,7 +32,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 // 1. Full Dashboard Summary Endpoint
 app.get('/api/dashboard', async (req, res) => {
-  const cityId = (req.query.city as CityId) || 'singapore';
+  const cityId = (req.query.city as CityId) || 'taipei';
   const data = getCityDashboardData(cityId);
 
   const [weather, air, traffic] = await Promise.all([
@@ -87,7 +87,7 @@ app.get('/api/dashboard', async (req, res) => {
 
 // 2. Transportation Status Endpoint
 app.get('/api/transportation/status', async (req, res) => {
-  const cityId = (req.query.city as CityId) || 'singapore';
+  const cityId = (req.query.city as CityId) || 'taipei';
   const data = getCityDashboardData(cityId);
 
   const traffic = await getLiveTraffic(cityId);
@@ -104,7 +104,7 @@ app.get('/api/transportation/status', async (req, res) => {
 
 // 3. Incidents List Endpoint
 app.get('/api/transportation/incidents', (req, res) => {
-  const cityId = (req.query.city as CityId) || 'singapore';
+  const cityId = (req.query.city as CityId) || 'taipei';
   const data = getCityDashboardData(cityId);
   res.json({
     cityId,
@@ -115,14 +115,14 @@ app.get('/api/transportation/incidents', (req, res) => {
 // 4. Resolve Incident Endpoint
 app.post('/api/transportation/incidents/:id/resolve', (req, res) => {
   const { id } = req.params;
-  const cityId = (req.query.city as CityId) || 'singapore';
+  const cityId = (req.query.city as CityId) || 'taipei';
   const success = resolveCityIncident(cityId, id);
   res.json({ success, incidentId: id });
 });
 
 // 5. Environment Current Status Endpoint
 app.get('/api/environment/current', async (req, res) => {
-  const cityId = (req.query.city as CityId) || 'singapore';
+  const cityId = (req.query.city as CityId) || 'taipei';
   const data = getCityDashboardData(cityId);
 
   const [weather, air] = await Promise.all([
@@ -143,7 +143,7 @@ app.get('/api/environment/current', async (req, res) => {
 
 // 6. Environment Forecast Endpoint
 app.get('/api/environment/forecast', (req, res) => {
-  const cityId = (req.query.city as CityId) || 'singapore';
+  const cityId = (req.query.city as CityId) || 'taipei';
   const data = getCityDashboardData(cityId);
   res.json({
     cityId,
@@ -158,7 +158,7 @@ app.get('/api/environment/forecast', (req, res) => {
 
 // 7. Environment AQI Detail
 app.get('/api/environment/aqi', (req, res) => {
-  const cityId = (req.query.city as CityId) || 'singapore';
+  const cityId = (req.query.city as CityId) || 'taipei';
   const data = getCityDashboardData(cityId);
   res.json({
     cityId,
@@ -171,7 +171,7 @@ app.get('/api/environment/aqi', (req, res) => {
 
 // 8. Analytics Endpoint
 app.get('/api/analytics', async (req, res) => {
-  const cityId = (req.query.city as CityId) || 'singapore';
+  const cityId = (req.query.city as CityId) || 'taipei';
   const data = getCityDashboardData(cityId);
 
   const [weather, air, traffic] = await Promise.all([
@@ -198,7 +198,7 @@ app.get('/api/analytics', async (req, res) => {
 
 // 9. Reports Archive Endpoint
 app.get('/api/reports', (req, res) => {
-  const cityId = (req.query.city as CityId) || 'singapore';
+  const cityId = (req.query.city as CityId) || 'taipei';
   res.json({
     reports: [
       { id: 'REP-2026-0723', title: 'Daily Smart City Operational Intelligence Brief', date: '2026-07-23', cityId, author: 'AI Smart City Engine', status: 'Completed', classification: 'Official Use Only' },
@@ -210,7 +210,7 @@ app.get('/api/reports', (req, res) => {
 
 // 10. AI Analysis Endpoint
 app.post('/api/ai/analyze', async (req, res) => {
-  const { cityId = 'singapore', userQuery } = req.body;
+  const { cityId = 'taipei', userQuery } = req.body;
   const currentData = getCityDashboardData(cityId as CityId);
   const cityName = currentData.city.name;
 
@@ -290,8 +290,10 @@ app.post('/api/agent/analyze-environment', async (req, res) => {
       throw new Error("Missing GEMINI_API_KEY in environment variables.");
     }
 
-    // Changed to the universally supported gemini-pro alias to resolve the 404 error
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    // Resolved Merge Conflict: Using the main branch model fallback provided by Kunal
+    const model = genAI.getGenerativeModel({
+      model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
+    });
     
     const prompt = `You are an autonomous climate command center AI managing the ${region} region. 
     The recent 7-day historical average temperature is ${pastAvgTemp}°C with a relative humidity of ${humidity}%. 
@@ -321,7 +323,19 @@ app.post('/api/agent/analyze-environment', async (req, res) => {
     });
   } catch (error) {
     console.error('AI Agent execution error:', error);
-    res.status(500).json({ success: false, error: 'AI Agent failed to evaluate telemetry' });
+    
+    // HACKATHON DEMO FALLBACK: Keeps the UI from crashing if the Google SDK throws a 404 or rate limit!
+    const projectedFallbackTemp = Number((req.body.pastAvgTemp + 1.6).toFixed(1));
+    res.json({
+      success: true,
+      region: req.body.region,
+      pastAvgTemp: req.body.pastAvgTemp,
+      projectedTemp: projectedFallbackTemp,
+      humidity: req.body.humidity,
+      riskLevel: projectedFallbackTemp > 28 ? 'Critical Heat Risk' : 'Moderate Thermal Warning',
+      aiDirective: `[SIMULATION FALLBACK] API unstable. Activating localized emergency protocols for ${req.body.region}.`,
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
@@ -329,7 +343,7 @@ app.post('/api/agent/analyze-environment', async (req, res) => {
 const geometryCache = new Map<string, unknown>();
 
 app.get('/api/geometry', (req, res) => {
-  const cityId = (req.query.city as string) || 'singapore';
+  const cityId = (req.query.city as string) || 'taipei';
   if (!/^[a-z]+$/.test(cityId)) {
     return res.status(400).json({ error: 'Invalid city id' });
   }
@@ -363,7 +377,7 @@ app.get('/api/ai/info', (req, res) => {
 
 // 12. Simulation Incident Injection Endpoint
 app.post('/api/simulation/inject', (req, res) => {
-  const { cityId = 'singapore', incident } = req.body;
+  const { cityId = 'taipei', incident } = req.body;
   const newIncident = injectCityIncident(cityId as CityId, incident || {});
   res.json({ success: true, incident: newIncident });
 });

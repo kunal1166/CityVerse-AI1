@@ -12,7 +12,7 @@
  */
 
 import { CITIES } from './cityData.js';
-import type { CityId } from '../src/types/index.js';
+import type { CityId } from '../shared/types.js';
 
 // Must match the union in src/types/index.ts exactly.
 type AqiStatus =
@@ -72,7 +72,7 @@ const num = (v: unknown): number =>
   typeof v === 'number' && Number.isFinite(v) ? Math.round(v * 10) / 10 : 0;
 
 export async function getLiveAirQuality(cityId: CityId): Promise<LiveAirQuality | null> {
-  const city = CITIES[cityId] || CITIES.singapore;
+  const city = CITIES[cityId] || CITIES.taipei;
 
   const hit = cache.get(cityId);
   if (hit && hit.expires > Date.now()) {
