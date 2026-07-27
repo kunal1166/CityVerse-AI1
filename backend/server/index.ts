@@ -286,15 +286,13 @@ app.post('/api/agent/analyze-environment', async (req, res) => {
   try {
     const { region, pastAvgTemp, humidity } = req.body;
     
-    // Ensure the API key is present so it doesn't crash on stage
     if (!process.env.GEMINI_API_KEY) {
       throw new Error("Missing GEMINI_API_KEY in environment variables.");
     }
 
-    // Use Gemini 1.5 Flash for high-speed hackathon responsiveness
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Changed to the universally supported gemini-pro alias to resolve the 404 error
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     
-    // The System Prompt forcing AI reasoning based on real telemetry
     const prompt = `You are an autonomous climate command center AI managing the ${region} region. 
     The recent 7-day historical average temperature is ${pastAvgTemp}°C with a relative humidity of ${humidity}%. 
     Based strictly on these physical climate metrics, predict the temperature for the upcoming week (as a single float number), determine a risk level ('Nominal', 'Moderate Thermal Warning', or 'Critical Heat Risk'), and provide a single-sentence autonomous mitigation directive.
@@ -306,10 +304,8 @@ app.post('/api/agent/analyze-environment', async (req, res) => {
       "aiDirective": "Activating regional cooling corridors."
     }`;
 
-    // Execute the live neural network call
     const result = await model.generateContent(prompt);
     
-    // Clean the response to ensure it parses perfectly
     const responseText = result.response.text().replace(/```json/gi, '').replace(/```/g, '').trim();
     const aiData = JSON.parse(responseText);
 
@@ -374,13 +370,12 @@ app.post('/api/simulation/inject', (req, res) => {
 
 // Start Server with Vite Middleware
 async function startServer() {
-  // Resolve the frontend directory correctly relative to where the backend is running
   const frontendRoot = path.resolve(process.cwd(), '../frontend');
 
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
-      root: frontendRoot, // Tell Vite exactly where to find vite.config.ts
+      root: frontendRoot, 
       server: { middlewareMode: true },
       appType: 'spa',
     });
