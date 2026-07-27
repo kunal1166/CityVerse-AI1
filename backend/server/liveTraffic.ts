@@ -23,7 +23,7 @@
  */
 
 import { CITIES } from './cityData.js';
-import type { CityId } from '../src/types/index.js';
+import type { CityId } from '../shared/types.js';
 
 export interface LiveTraffic {
   congestionIndex: number;
@@ -39,23 +39,11 @@ export interface LiveTraffic {
  * that alone will make your numbers noticeably more credible.
  */
 const SAMPLE_POINTS: Record<string, [number, number][]> = {
-  singapore: [
-    [1.3521, 103.8198], // Central
-    [1.3300, 103.8500], // PIE / CTE corridor
-    [1.3050, 103.8540], // Marina / Rochor
-    [1.3400, 103.7050], // Jurong
-  ],
   taipei: [
     [25.0330, 121.5654], // Xinyi
     [25.0478, 121.5170], // Zhongzheng
     [25.0800, 121.5700], // Neihu
     [25.0170, 121.5400], // Da'an south
-  ],
-  bengaluru: [
-    [12.9716, 77.5946], // City centre
-    [12.9352, 77.6245], // Koramangala
-    [12.9698, 77.7500], // Whitefield
-    [12.9170, 77.6230], // Silk Board
   ],
 };
 
@@ -63,7 +51,7 @@ const cache = new Map<string, { data: LiveTraffic; expires: number }>();
 const CACHE_SECONDS = 60; // TomTom's own model refreshes about every minute
 
 export async function getLiveTraffic(cityId: CityId): Promise<LiveTraffic | null> {
-  const city = CITIES[cityId] || CITIES.singapore;
+  const city = CITIES[cityId] || CITIES.taipei;
   const key = (process.env.TOMTOM_API_KEY || '').trim();
 
   // No key yet? That's fine - say so once, clearly, and move on.
@@ -76,7 +64,7 @@ export async function getLiveTraffic(cityId: CityId): Promise<LiveTraffic | null
     return hit.data;
   }
 
-  const points = SAMPLE_POINTS[cityId] || SAMPLE_POINTS.singapore;
+  const points = SAMPLE_POINTS[cityId] || SAMPLE_POINTS.taipei;
 
   try {
     const controller = new AbortController();

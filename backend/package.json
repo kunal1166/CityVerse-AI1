@@ -12,6 +12,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^4.21.2"
@@ -22,6 +23,7 @@
     "@types/node": "^22.14.0",
     "esbuild": "^0.25.0",
     "tsx": "^4.21.0",
-    "typescript": "~5.8.2"
+    "typescript": "~5.8.2",
+    "vite": "^7.1.0"
   }
 }

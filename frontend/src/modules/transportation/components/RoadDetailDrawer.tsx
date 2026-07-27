@@ -584,7 +584,7 @@ export const RoadDetailDrawer: React.FC<RoadDetailDrawerProps> = ({
 
       {/* Drawer Footer */}
       <div className="p-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-[10px] text-gray-500">
-        <span>Singapore LTA / National Traffic Command Standard</span>
+        <span>Taipei City Traffic Bureau / National Command Standard</span>
         <button
           onClick={onClose}
           className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded transition-colors"
@@ -595,4 +595,3 @@ export const RoadDetailDrawer: React.FC<RoadDetailDrawerProps> = ({
     </motion.div>
   );
 };
-

@@ -6,13 +6,6 @@ import { Globe, ShieldCheck, Layers, ChevronUp, ChevronDown, Sparkles, Clock, Za
 
 const TAIWAN_REGIONS = [
   { name: 'Taipei Capital Region', lng: 121.5654, lat: 25.0330, zoom: 13.5 },
-  { name: 'New Taipei District', lng: 121.4650, lat: 25.0120, zoom: 13 },
-  { name: 'Taichung Metropolitan', lng: 120.6736, lat: 24.1477, zoom: 13 },
-  { name: 'Tainan Cultural Core', lng: 120.2173, lat: 22.9997, zoom: 13 },
-  { name: 'Kaohsiung Harbor Sector', lng: 120.3119, lat: 22.6273, zoom: 13 },
-  { name: 'Hualien Eastern Corridor', lng: 121.6015, lat: 23.9872, zoom: 13 },
-  { name: 'Keelung Port Hub', lng: 121.7446, lat: 25.1276, zoom: 13 },
-  { name: 'Hsinchu Science Park', lng: 120.9686, lat: 24.7826, zoom: 13 },
 ];
 
 interface RegionPrediction {
@@ -142,7 +135,7 @@ export const Taiwan3DMap: React.FC = () => {
   useEffect(() => {
     if (!mapInstance.current || predictions.length === 0) return;
 
-    Object.values(markersRef.current).forEach((marker) => marker.remove());
+    Object.values(markersRef.current).forEach((marker: maplibregl.Marker) => marker.remove());
     markersRef.current = {};
 
     predictions.forEach((item) => {

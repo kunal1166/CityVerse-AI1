@@ -92,7 +92,7 @@ export const TransportationModule: React.FC = () => {
               <h1 className="font-bold text-gray-900 text-sm sm:text-base leading-tight flex items-center gap-2">
                 Transportation & Traffic Operations Command Center
                 <span className="text-[10px] bg-slate-900 text-white font-mono px-2 py-0.5 rounded font-bold uppercase">
-                  {dashboardData?.city.name || 'Singapore'} LTA Tier-1
+                  {dashboardData?.city.name || 'Taipei'} LTA Tier-1
                 </span>
               </h1>
               <p className="text-[11px] text-gray-500">
@@ -368,7 +368,7 @@ export const TransportationModule: React.FC = () => {
 
             {/* TAB 2: ROUTE OPTIMIZER */}
             {activeRightTab === 'route_optimizer' && (
-              <RouteOptimizerWidget cityName={dashboardData?.city.name || 'Singapore'} />
+              <RouteOptimizerWidget cityName={dashboardData?.city.name || 'Taipei'} />
             )}
 
             {/* TAB 3: SCENARIO SIMULATOR */}
