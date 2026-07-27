@@ -34,7 +34,7 @@ export const Taiwan3DMap: React.FC = () => {
   const markersRef = useRef<{ [key: string]: maplibregl.Marker }>({});
   
   const [predictions, setPredictions] = useState<RegionPrediction[]>([]);
-  const [statusText, setStatusText] = useState<string>('Fetching Real Open-Meteo Telemetry...');
+  const [statusText, setStatusText] = useState<string>('Syncing Open-Meteo Telemetry with Gemini AI...');
   const [activeView, setActiveView] = useState<'country' | string>('country');
   const [showGrid, setShowGrid] = useState<boolean>(true);
   const [timeMode, setTimeMode] = useState<'past' | 'present' | 'future'>('present');
@@ -66,6 +66,7 @@ export const Taiwan3DMap: React.FC = () => {
       try {
         const results = await Promise.all(
           TAIWAN_REGIONS.map(async (region) => {
+            // 1. Fetch Real Historical Weather
             const weatherRes = await fetch(
               `https://api.open-meteo.com/v1/forecast?latitude=${region.lat}&longitude=${region.lng}&past_days=7&hourly=temperature_2m,relative_humidity_2m&forecast_days=1`
             );
@@ -77,18 +78,15 @@ export const Taiwan3DMap: React.FC = () => {
             const pastAvgTemp = Number((temps.reduce((a: number, b: number) => a + b, 0) / temps.length).toFixed(1));
             const humidity = Number((humidities.reduce((a: number, b: number) => a + b, 0) / humidities.length).toFixed(1));
 
-            // Real-time microclimate projection logic based on live thermal index
-            const projectedTemp = Number((pastAvgTemp + 1.6).toFixed(1));
-            let riskLevel = 'Nominal';
-            let directive = `Autonomous Climate Agent: Baseline thermal stability verified for ${region.name}.`;
-
-            if (projectedTemp > 28) {
-              riskLevel = 'Critical Heat Risk';
-              directive = `Gemini Agent Directive: Urban Heat Island surge projected for ${region.name} (${projectedTemp}°C). Activating regional cooling corridors.`;
-            } else if (projectedTemp > 25) {
-              riskLevel = 'Moderate Thermal Warning';
-              directive = `Gemini Agent Directive: Elevated thermal index detected in ${region.name}. Optimizing public microclimate shelters.`;
-            }
+            // 2. Transmit strict parameters to your live Gemini AI Backend
+            const aiResponse = await fetch('/api/agent/analyze-environment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ region: region.name, pastAvgTemp, humidity })
+            });
+            
+            if (!aiResponse.ok) throw new Error("AI Backend generation failed");
+            const aiData = await aiResponse.json();
 
             return {
               name: region.name,
@@ -96,17 +94,17 @@ export const Taiwan3DMap: React.FC = () => {
               lat: region.lat,
               zoom: region.zoom,
               pastAvgTemp,
-              projectedTemp,
+              projectedTemp: aiData.projectedTemp || pastAvgTemp,
               humidity,
-              aiDirective: directive,
-              riskLevel,
+              aiDirective: aiData.aiDirective || "AI Link severed. Standby for manual override.",
+              riskLevel: aiData.riskLevel || "Unknown",
               actionTaken: false
             };
           })
         );
 
         setPredictions(results);
-        setStatusText('Live Open-Meteo & Climate Engine Synchronized');
+        setStatusText('Live Telemetry & Gemini Neural Net Synchronized');
 
         results.forEach((res) => {
           let charIndex = 0;
@@ -123,7 +121,7 @@ export const Taiwan3DMap: React.FC = () => {
 
       } catch (err) {
         console.error('Data fetch error:', err);
-        setStatusText('Telemetry Sync Error');
+        setStatusText('Critical: Neural Link Severed');
       }
     };
 
@@ -151,7 +149,7 @@ export const Taiwan3DMap: React.FC = () => {
       const activeTemp = getDisplayTemp(item, timeMode);
       const el = document.createElement('div');
       
-      const borderColor = item.actionTaken ? '#10b981' : item.riskLevel === 'Critical Heat Risk' ? '#ef4444' : '#3b82f6';
+      const borderColor = item.actionTaken ? '#10b981' : item.riskLevel.includes('Critical') ? '#ef4444' : '#3b82f6';
       const statusLabel = item.actionTaken ? '🛡️ DEFENSE ACTIVE' : `${timeMode.toUpperCase()} TEMP`;
 
       el.innerHTML = `
@@ -306,7 +304,7 @@ export const Taiwan3DMap: React.FC = () => {
                     <h4 className="text-xs font-bold text-white truncate max-w-[140px]">{item.name}</h4>
                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
                       item.actionTaken ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                      item.riskLevel === 'Critical Heat Risk' ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-blue-500/20 text-blue-300'
+                      item.riskLevel.includes('Critical') ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-blue-500/20 text-blue-300'
                     }`}>
                       {item.riskLevel}
                     </span>
@@ -328,7 +326,7 @@ export const Taiwan3DMap: React.FC = () => {
                 </div>
 
                 <div>
-                  <div className="pt-2 border-t border-gray-800 text-[10px] text-blue-300 leading-snug flex items-start gap-1.5 mb-2.5">
+                  <div className="pt-2 border-t border-gray-800 text-[10px] text-blue-300 leading-snug flex items-start gap-1.5 mb-2.5 min-h-[40px]">
                     <Sparkles className="w-3 h-3 text-blue-400 shrink-0 mt-0.5 animate-pulse" />
                     <span>{typedText[item.name] || item.aiDirective}</span>
                   </div>

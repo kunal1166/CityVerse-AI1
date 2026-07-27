@@ -1,6 +1,7 @@
 import './env.js'; // must stay first: loads .env.local / .env before other modules read process.env
 import express from 'express';
 import path from 'path';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import {
   generateBriefing,
   getProviderInfo,
@@ -20,6 +21,9 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json());
+
+// Initialize the Gemini AI Client
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 // The AI engine is resolved by ./aiProvider.ts from environment variables.
 // Supported: Google Gemini, Anthropic, OpenAI, Groq, OpenRouter, local Ollama, or offline mode.
@@ -282,27 +286,41 @@ app.post('/api/agent/analyze-environment', async (req, res) => {
   try {
     const { region, pastAvgTemp, humidity } = req.body;
     
-    // Real predictive environmental simulation calculation
-    const projectedTemp = Number((pastAvgTemp + 1.7).toFixed(1));
-    let riskLevel = 'Nominal';
-    let directive = `Agentic AI Analysis for ${region}: Historical baseline is stable at ${pastAvgTemp}°C. Routine telemetry monitoring active.`;
-
-    if (projectedTemp > 28) {
-      riskLevel = 'Critical Heat Risk';
-      directive = `Agentic AI Autonomous Decision: Severe Urban Heat Island surge projected for ${region} (${projectedTemp}°C). Activating regional cooling corridors and smart-grid energy balancing.`;
-    } else if (projectedTemp > 25) {
-      riskLevel = 'Moderate Thermal Warning';
-      directive = `Agentic AI Autonomous Decision: Elevated thermal index detected in ${region}. Re-allocating municipal resources and optimizing public microclimate shelters.`;
+    // Ensure the API key is present so it doesn't crash on stage
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("Missing GEMINI_API_KEY in environment variables.");
     }
+
+    // Use Gemini 1.5 Flash for high-speed hackathon responsiveness
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    
+    // The System Prompt forcing AI reasoning based on real telemetry
+    const prompt = `You are an autonomous climate command center AI managing the ${region} region. 
+    The recent 7-day historical average temperature is ${pastAvgTemp}°C with a relative humidity of ${humidity}%. 
+    Based strictly on these physical climate metrics, predict the temperature for the upcoming week (as a single float number), determine a risk level ('Nominal', 'Moderate Thermal Warning', or 'Critical Heat Risk'), and provide a single-sentence autonomous mitigation directive.
+    
+    You must respond ONLY with a raw, valid JSON object exactly matching this schema. Do not include markdown formatting or backticks:
+    {
+      "projectedTemp": 28.5,
+      "riskLevel": "Critical Heat Risk",
+      "aiDirective": "Activating regional cooling corridors."
+    }`;
+
+    // Execute the live neural network call
+    const result = await model.generateContent(prompt);
+    
+    // Clean the response to ensure it parses perfectly
+    const responseText = result.response.text().replace(/```json/gi, '').replace(/```/g, '').trim();
+    const aiData = JSON.parse(responseText);
 
     res.json({
       success: true,
       region,
       pastAvgTemp,
-      projectedTemp,
+      projectedTemp: aiData.projectedTemp,
       humidity,
-      riskLevel,
-      aiDirective: directive,
+      riskLevel: aiData.riskLevel,
+      aiDirective: aiData.aiDirective,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
@@ -380,40 +398,6 @@ async function startServer() {
     logProviderStatus();
     logTrafficStatus();
   });
-
-// Add this route securely inside your backend/server/index.ts file near your other app.post / app.get methods:
-
-app.post('/api/agent/analyze-environment', async (req, res) => {
-  try {
-    const { region, pastAvgTemp, humidity } = req.body;
-    
-    const projectedTemp = Number((pastAvgTemp + 1.7).toFixed(1));
-    let riskLevel = 'Nominal';
-    let directive = `Agentic AI Analysis for ${region}: Historical baseline is stable at ${pastAvgTemp}°C. Routine telemetry monitoring active.`;
-
-    if (projectedTemp > 28) {
-      riskLevel = 'Critical Heat Risk';
-      directive = `Agentic AI Autonomous Decision: Severe Urban Heat Island surge projected for ${region} (${projectedTemp}°C). Activating regional cooling corridors and smart-grid energy balancing.`;
-    } else if (projectedTemp > 25) {
-      riskLevel = 'Moderate Thermal Warning';
-      directive = `Agentic AI Autonomous Decision: Elevated thermal index detected in ${region}. Re-allocating municipal resources and optimizing public microclimate shelters.`;
-    }
-
-    res.json({
-      success: true,
-      region,
-      pastAvgTemp,
-      projectedTemp,
-      humidity,
-      riskLevel,
-      aiDirective: directive,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('AI Agent execution error:', error);
-    res.status(500).json({ success: false, error: 'AI Agent failed to evaluate telemetry' });
-  }
-});
 }
 
 startServer();
