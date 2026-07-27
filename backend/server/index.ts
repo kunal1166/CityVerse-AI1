@@ -370,6 +370,65 @@ app.get('/api/geometry', (req, res) => {
   }
 });
 
+// 10d. NEW: Agentic Analytics Insight Endpoint
+app.post('/api/agent/analytics-insight', async (req, res) => {
+  const { correlations, trends, cityId } = req.body;
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error("Missing GEMINI_API_KEY in environment variables.");
+
+    const prompt = `You are a specialized predictive data scientist AI for the city of ${cityId}.
+    Analyze this cross-domain correlation matrix: ${JSON.stringify(correlations)}
+    and the recent 24-hour telemetry trends: ${JSON.stringify(trends ? trends.slice(-6) : [])}.
+    
+    Identify the highest risk urban bottleneck from these correlations and provide a specific, strategic 3-horizon prediction (1h, 4h, 12h) with an autonomous mitigation directive for each.
+    
+    You must respond ONLY with a raw, valid JSON object exactly matching this schema. Do not include markdown formatting or backticks:
+    {
+      "primaryRisk": "Concise summary of the primary risk identified from correlations.",
+      "horizons": [
+        { "time": "+1 Hour", "forecast": "Short prediction based on data.", "directive": "Immediate action command." },
+        { "time": "+4 Hours", "forecast": "Medium prediction based on data.", "directive": "Medium-term action command." },
+        { "time": "+12 Hours", "forecast": "Long prediction based on data.", "directive": "Long-term policy adjustment." }
+      ]
+    }`;
+
+    // Direct HTTP call to bypass SDK rate-limit quirks during heavy dashboard loads
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.3 }
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message || "Direct API call failed");
+
+    let responseText = data.candidates[0].content.parts[0].text;
+    responseText = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const aiData = JSON.parse(responseText);
+
+    return res.json({ success: true, insights: aiData });
+
+  } catch (error) {
+    console.error(`Analytics AI Agent error:`, error);
+    // HACKATHON FALLBACK: Ensures the analytics page doesn't break if API limits are hit
+    return res.json({
+      success: true,
+      insights: {
+        primaryRisk: "[SIMULATION ACTIVE] Strong inverse correlation detected between precipitation and arterial throughput.",
+        horizons: [
+          { time: "+1 Hour", forecast: "Speed degradation likely to reach critical thresholds.", directive: "Initiate localized traffic signal rerouting." },
+          { time: "+4 Hours", forecast: "Volume bottleneck expansion anticipated in low-lying sectors.", directive: "Pre-deploy emergency transit units to secondary corridors." },
+          { time: "+12 Hours", forecast: "Clearance phase and grid normalization.", directive: "Monitor arterial flow recovery and log infrastructure stress." }
+        ]
+      }
+    });
+  }
+});
+
 // 11. AI Engine Info Endpoint
 app.get('/api/ai/info', (req, res) => {
   res.json(getProviderInfo());
