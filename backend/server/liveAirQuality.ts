@@ -69,26 +69,87 @@ function toStatus(aqi: number): AqiStatus {
 
 /** Rounds to 1 decimal, and turns null/undefined into 0 so the UI never shows blanks. */
 const num = (v: unknown): number =>
-  typeof v === 'number' && Number.isFinite(v) ? Math.round(v * 10) / 10 : 0;
+  typeof v === 'number' && Number.isFinite(v) ? Math.round(v * 10) / 10 : typeof v === 'string' && !isNaN(parseFloat(v)) ? Math.round(parseFloat(v) * 10) / 1 : 0;
 
-export async function getLiveAirQuality(cityId: CityId): Promise<LiveAirQuality | null> {
-  const city = CITIES[cityId] || CITIES.singapore;
+/**
+ * Fetch from Taiwan's MOENV Official API specifically for Taipei
+ */
+async function getTaiwanMoenvAirQuality(): Promise<LiveAirQuality | null> {
+  const apiKey = 'b7df779e-71a6-4148-8379-5afbd441d803';
+  const url = `https://data.moenv.gov.tw/api/v2/aqx_p_432?api_key=${apiKey}&limit=10&format=JSON&filters=County,EQ,臺北市`;
 
-  const hit = cache.get(cityId);
-  if (hit && hit.expires > Date.now()) {
-    return hit.data;
-  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 6000);
 
   try {
-    const url =
-      `https://air-quality-api.open-meteo.com/v1/air-quality` +
-      `?latitude=${city.lat}&longitude=${city.lng}` +
-      `&current=pm2_5,pm10,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide,ozone,us_aqi` +
-      `&timezone=auto`;
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timer);
+
+    if (!res.ok) throw new Error(`MOENV API returned HTTP ${res.status}`);
+
+    const json: any = await res.json();
+    const records = json?.records;
+
+    if (!Array.isArray(records) || records.length === 0) {
+      throw new Error('No records returned for Taipei');
+    }
+
+    // Average the AQI and PM metrics across Taipei's active stations
+    let totalAqi = 0, totalPm25 = 0, totalPm10 = 0, totalNo2 = 0, totalSo2 = 0, totalCo = 0, totalO3 = 0;
+    let validCount = 0;
+
+    for (const station of records) {
+      const stationAqi = num(station.aqi);
+      if (stationAqi > 0) {
+        totalAqi += stationAqi;
+        totalPm25 += num(station['pm2.5']);
+        totalPm10 += num(station.pm10);
+        totalNo2 += num(station.no2);
+        totalSo2 += num(station.so2);
+        totalCo += num(station.co);
+        totalO3 += num(station.o3);
+        validCount++;
+      }
+    }
+
+    if (validCount === 0) throw new Error('No valid station measurements');
+
+    const avgAqi = Math.round(totalAqi / validCount);
+
+    return {
+      aqi: avgAqi,
+      aqiStatus: toStatus(avgAqi),
+      aqiBreakdown: {
+        pm25: num(totalPm25 / validCount),
+        pm10: num(totalPm10 / validCount),
+        no2: num(totalNo2 / validCount),
+        so2: num(totalSo2 / validCount),
+        co: num(totalCo / validCount),
+        o3: num(totalO3 / validCount),
+      },
+    };
+  } catch (err: any) {
+    clearTimeout(timer);
+    console.warn(`[air] Taiwan MOENV API fetch failed (${err.message}). Trying fallback provider...`);
+    return null;
+  }
+}
+
+/**
+ * Fetch from Open-Meteo Air Quality API
+ */
+async function getOpenMeteoAirQuality(cityId: CityId): Promise<LiveAirQuality | null> {
+  const city = CITIES[cityId] || CITIES.singapore;
+  const url =
+    `https://air-quality-api.open-meteo.com/v1/air-quality` +
+    `?latitude=${city.lat}&longitude=${city.lng}` +
+    `&current=pm2_5,pm10,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide,ozone,us_aqi` +
+    `&timezone=auto`;
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
 
+  try {
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timer);
 
@@ -99,14 +160,12 @@ export async function getLiveAirQuality(cityId: CityId): Promise<LiveAirQuality 
     if (!c) throw new Error('Response contained no "current" block');
 
     const pm25 = num(c.pm2_5);
-
-    // Prefer the API's own AQI. Fall back to computing it from PM2.5.
     const aqi =
       typeof c.us_aqi === 'number' && Number.isFinite(c.us_aqi)
         ? Math.round(c.us_aqi)
         : pm25ToAqi(pm25);
 
-    const air: LiveAirQuality = {
+    return {
       aqi,
       aqiStatus: toStatus(aqi),
       aqiBreakdown: {
@@ -119,12 +178,45 @@ export async function getLiveAirQuality(cityId: CityId): Promise<LiveAirQuality 
         o3: num(c.ozone),
       },
     };
-
-    cache.set(cityId, { data: air, expires: Date.now() + CACHE_SECONDS * 1000 });
-    console.log(`[air] LIVE data for ${city.name}: AQI ${air.aqi} (${air.aqiStatus})`);
-    return air;
   } catch (err: any) {
-    console.warn(`[air] Live fetch failed for ${city.name} (${err.message}). Using mock data.`);
+    clearTimeout(timer);
+    console.warn(`[air] Open-Meteo fetch failed for ${city.name} (${err.message}). Using mock data.`);
     return null;
   }
+}
+
+/**
+ * Primary export entry point
+ */
+export async function getLiveAirQuality(cityId: CityId): Promise<LiveAirQuality | null> {
+  const city = CITIES[cityId] || CITIES.singapore;
+
+  const hit = cache.get(cityId);
+  if (hit && hit.expires > Date.now()) {
+    return hit.data;
+  }
+
+  let air: LiveAirQuality | null = null;
+
+  // 1. Try Taiwan MOENV API directly if Taipei is requested
+  if (cityId === 'taipei') {
+    air = await getTaiwanMoenvAirQuality();
+    if (air) {
+      console.log(`[air] LIVE Taiwan MOENV data for Taipei: AQI ${air.aqi} (${air.aqiStatus})`);
+    }
+  }
+
+  // 2. Fall back to Open-Meteo for other cities or if MOENV fails
+  if (!air) {
+    air = await getOpenMeteoAirQuality(cityId);
+    if (air) {
+      console.log(`[air] LIVE Open-Meteo data for ${city.name}: AQI ${air.aqi} (${air.aqiStatus})`);
+    }
+  }
+
+  if (air) {
+    cache.set(cityId, { data: air, expires: Date.now() + CACHE_SECONDS * 1000 });
+  }
+
+  return air;
 }
