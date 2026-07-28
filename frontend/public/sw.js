@@ -3,7 +3,9 @@ const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon.ico'
+  '/cityverse-ai-logo.svg',
+  '/pwa-192x192.png',
+  '/pwa-512x512.png'
 ];
 
 // 1. Install Event: Cache core assets

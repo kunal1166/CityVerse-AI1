@@ -903,6 +903,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
     if (layers.incidents) {
       dashboardData.incidents.forEach((inc) => {
         if (inc.status === 'resolved') return;
+        if (!inc.coordinates) return;
 
         const isClosed = inc.type === 'closure';
         const isCritical = inc.severity === 'critical';
@@ -925,6 +926,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
     // 7. TRAFFIC CAMERAS MARKERS
     if (layers.cameras) {
       cameras.forEach((cam) => {
+        if (!cam.coordinates) return;
         const camIcon = L.divIcon({
           className: 'custom-cam-marker',
           html: `<div style="background-color: #0F172A; width: 24px; height: 24px; border-radius: 4px; border: 1.5px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: #38BDF8; font-size: 11px; cursor: pointer;">📷</div>`,
@@ -973,6 +975,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
     // 9. SENSORS MARKERS
     if (layers.sensors && dashboardData.sensors) {
       dashboardData.sensors.forEach((sensor) => {
+        if (!sensor.coordinates) return;
         const sColor = sensor.status === 'critical' ? '#DC2626' : sensor.status === 'warning' ? '#F97316' : '#16A34A';
         const sensorIcon = L.divIcon({
           className: 'custom-sensor-marker',

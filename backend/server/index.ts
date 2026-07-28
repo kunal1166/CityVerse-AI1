@@ -1,4 +1,4 @@
-import './env.js'; // must stay first: loads .env.local / .env before other modules read process.env
+import './env.js'; 
 import express from 'express';
 import path from 'path';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -80,36 +80,39 @@ app.get('/api/dashboard', async (req, res) => {
   }
 
   // 4. Populate Live Dynamic Sensors
-  const liveSensors = [
-    {
-      id: 'SEN-TP-01',
-      name: 'Keelung River Water Level Node',
-      type: 'FLOOD_STAGE',
-      district: 'Songshan',
-      reading: `${(0.45 + rainRate * 0.1).toFixed(2)} m`,
-      status: rainRate > 15 ? 'WARNING' : 'NORMAL',
-      lastSync: 'Just now',
-    },
-    {
-      id: 'SEN-TP-02',
-      name: 'Taipei EPA Air Monitoring Network',
-      type: 'AQI',
-      district: 'Xinyi District',
-      reading: `${air?.aqi ?? data.environment.aqi} AQI`,
-      status: (air?.aqi ?? data.environment.aqi) > 50 ? 'MODERATE' : 'NORMAL',
-      lastSync: 'Just now',
-    },
-    {
-      id: 'SEN-TP-03',
-      name: 'Zhongshan Microclimate Doppler Station',
-      type: 'WEATHER',
-      district: 'Zhongshan',
-      reading: `${weather?.temp ?? data.environment.temp} °C / ${weather?.humidity ?? data.environment.humidity}% RH`,
-      status: 'NORMAL',
-      lastSync: 'Just now',
-    },
-  ];
-  data.sensors = liveSensors as any;
+  // NOTE: merge live readings into the existing sensor objects rather than
+  // replacing them outright — the old code swapped in a differently-shaped
+  // payload (no `coordinates`, no `cityId`, `reading` instead of `value`/`unit`,
+  // uppercase `type`/`status`) which crashed the map when it tried to place
+  // a marker with an undefined LatLng.
+  data.sensors = data.sensors.map((s) => {
+    if (s.id === 'SEN-TP-01') {
+      return {
+        ...s,
+        value: Number((0.45 + rainRate * 0.1).toFixed(2)),
+        status: rainRate > 15 ? ('warning' as const) : ('normal' as const),
+        lastUpdated: 'Just now',
+      };
+    }
+    if (s.id === 'SEN-TP-02') {
+      const aqiVal = air?.aqi ?? data.environment.aqi;
+      return {
+        ...s,
+        value: aqiVal,
+        status: aqiVal > 50 ? ('warning' as const) : ('normal' as const),
+        lastUpdated: 'Just now',
+      };
+    }
+    if (s.id === 'SEN-TP-03') {
+      return {
+        ...s,
+        value: weather?.temp ?? data.environment.temp,
+        status: 'normal' as const,
+        lastUpdated: 'Just now',
+      };
+    }
+    return s;
+  });
 
   const HORIZONS = [1, 4, 12];
   let prediction: any = {
