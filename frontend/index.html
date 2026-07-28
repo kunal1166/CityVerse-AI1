@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CityVerse AI | Smart City Command Center</title>
+    <link rel="icon" href="public/pwa-192x192.png">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0F172A" />
+    <meta name="description" content="Real-time urban operations command center for Taipei City." />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+
     <!-- Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +21,18 @@
   </head>
   <body class="h-full font-['Inter',sans-serif] text-gray-900 antialiased selection:bg-blue-600 selection:text-white">
     <div id="root" class="h-full"></div>
+
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((reg) => console.log('[PWA] Service Worker registered:', reg.scope))
+            .catch((err) => console.error('[PWA] Service Worker registration failed:', err));
+        });
+      }
+    </script>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-
