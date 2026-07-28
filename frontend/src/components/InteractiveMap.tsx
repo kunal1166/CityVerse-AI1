@@ -1,8 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { useCityStore, CITIES_CONFIG } from '../store/useCityStore';
-import { Layers, MapPin, AlertCircle, Eye, EyeOff, Navigation } from 'lucide-react';
-import { RoadIncident } from '../types';
+import { Layers, Navigation, Eye, EyeOff } from 'lucide-react';
 
 export const InteractiveMap: React.FC = () => {
   const { 
@@ -18,16 +17,25 @@ export const InteractiveMap: React.FC = () => {
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layersGroupRef = useRef<L.LayerGroup | null>(null);
 
-  const cityConfig = CITIES_CONFIG[selectedCity];
+  // Safe fallback to Taipei cityConfig to prevent undefined errors
+  const cityConfig = CITIES_CONFIG?.[selectedCity] || CITIES_CONFIG?.taipei || {
+    lat: 25.05306,
+    lng: 121.52639,
+    zoom: 12,
+  };
 
   // Initialize Leaflet Map
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
+    const centerLat = cityConfig.lat ?? 25.05306;
+    const centerLng = cityConfig.lng ?? 121.52639;
+    const zoomLevel = cityConfig.zoom ?? 12;
+
     if (!mapInstanceRef.current) {
       const map = L.map(mapContainerRef.current, {
-        center: [cityConfig.lat, cityConfig.lng],
-        zoom: cityConfig.zoom,
+        center: [centerLat, centerLng],
+        zoom: zoomLevel,
         zoomControl: false,
       });
 
@@ -43,7 +51,7 @@ export const InteractiveMap: React.FC = () => {
       mapInstanceRef.current = map;
       layersGroupRef.current = L.layerGroup().addTo(map);
     } else {
-      mapInstanceRef.current.setView([cityConfig.lat, cityConfig.lng], cityConfig.zoom);
+      mapInstanceRef.current.setView([centerLat, centerLng], zoomLevel);
     }
   }, [selectedCity, cityConfig]);
 
@@ -55,12 +63,11 @@ export const InteractiveMap: React.FC = () => {
 
     layersGroup.clearLayers();
 
+    const centerLat = cityConfig.lat ?? 25.05306;
+    const centerLng = cityConfig.lng ?? 121.52639;
+
     // 1. Render Traffic Polylines & Flow Indicators
     if (mapLayers.traffic) {
-      const centerLat = cityConfig.lat;
-      const centerLng = cityConfig.lng;
-
-      // Simulated arterial traffic corridors with severity colors
       const trafficCorridors = [
         {
           points: [
@@ -68,7 +75,7 @@ export const InteractiveMap: React.FC = () => {
             [centerLat + 0.01, centerLng - 0.01],
             [centerLat - 0.01, centerLng + 0.03],
           ] as [number, number][],
-          color: dashboardData.traffic.congestionIndex > 60 ? '#DC2626' : '#D97706', // Red or Amber
+          color: (dashboardData.traffic?.congestionIndex ?? 0) > 60 ? '#DC2626' : '#D97706',
           weight: 6,
           opacity: 0.8,
           label: 'Primary Expressway Corridor (High Flow)',
@@ -79,7 +86,7 @@ export const InteractiveMap: React.FC = () => {
             [centerLat, centerLng],
             [centerLat + 0.03, centerLng + 0.02],
           ] as [number, number][],
-          color: '#16A34A', // Green
+          color: '#16A34A',
           weight: 5,
           opacity: 0.7,
           label: 'Arterial Bypass (Fluid Flow)',
@@ -89,7 +96,7 @@ export const InteractiveMap: React.FC = () => {
             [centerLat + 0.04, centerLng - 0.01],
             [centerLat + 0.02, centerLng + 0.04],
           ] as [number, number][],
-          color: '#2563EB', // Blue / Normal
+          color: '#2563EB',
           weight: 5,
           opacity: 0.7,
           label: 'Northern Commuter Link',
@@ -110,10 +117,10 @@ export const InteractiveMap: React.FC = () => {
 
     // 2. Render AQI Heat Circles
     if (mapLayers.aqi && dashboardData.environment) {
-      const aqi = dashboardData.environment.aqi;
+      const aqi = dashboardData.environment.aqi ?? 26;
       const aqiColor = aqi > 100 ? '#DC2626' : aqi > 50 ? '#D97706' : '#16A34A';
 
-      const aqiZone = L.circle([cityConfig.lat, cityConfig.lng], {
+      const aqiZone = L.circle([centerLat, centerLng], {
         color: aqiColor,
         fillColor: aqiColor,
         fillOpacity: 0.15,
@@ -121,19 +128,26 @@ export const InteractiveMap: React.FC = () => {
         weight: 1.5,
         dashArray: '4, 4',
       });
-      aqiZone.bindTooltip(`Urban AQI Radius: ${aqi} (${dashboardData.environment.aqiStatus})`, { sticky: true });
+      aqiZone.bindTooltip(`Urban AQI Radius: ${aqi} (${dashboardData.environment.aqiStatus || 'Good'})`, { sticky: true });
       layersGroup.addLayer(aqiZone);
     }
 
-    // 3. Render Incidents Markers
-    if (mapLayers.incidents) {
+    // 3. Render Incidents Markers (with Safeguards)
+    if (mapLayers.incidents && dashboardData.incidents) {
       dashboardData.incidents.forEach((inc) => {
         if (inc.status === 'resolved') return;
 
-        // Filter if query exists
+        // Ensure incident coordinates exist and contain valid numbers
+        const coords = inc.coordinates || (inc as any).location;
+        if (!coords || typeof coords[0] !== 'number' || typeof coords[1] !== 'number') return;
+
+        // Filter if search query exists
         if (searchQuery) {
           const q = searchQuery.toLowerCase();
-          const match = inc.title.toLowerCase().includes(q) || inc.locationName.toLowerCase().includes(q) || inc.type.toLowerCase().includes(q);
+          const match = 
+            (inc.title && inc.title.toLowerCase().includes(q)) || 
+            (inc.locationName && inc.locationName.toLowerCase().includes(q)) || 
+            (inc.type && inc.type.toLowerCase().includes(q));
           if (!match) return;
         }
 
@@ -147,24 +161,24 @@ export const InteractiveMap: React.FC = () => {
           iconAnchor: [11, 11],
         });
 
-        const marker = L.marker(inc.coordinates, { icon: customIcon });
+        const marker = L.marker([coords[0], coords[1]], { icon: customIcon });
 
         const popupContent = `
           <div style="font-family: Inter, sans-serif; padding: 4px; max-width: 220px;">
             <div style="font-size: 10px; font-weight: 700; color: ${color}; text-transform: uppercase;">
-              ${inc.severity} ${inc.type.replace('_', ' ')}
+              ${inc.severity} ${(inc.type || '').replace('_', ' ')}
             </div>
             <div style="font-size: 12px; font-weight: 700; color: #111827; margin-top: 2px;">
-              ${inc.title}
+              ${inc.title || 'Incident Alert'}
             </div>
             <div style="font-size: 10px; color: #6B7280; margin-top: 4px;">
-              ${inc.locationName}
+              ${inc.locationName || 'Taipei Sector'}
             </div>
             <div style="font-size: 10px; color: #374151; margin-top: 6px; border-top: 1px solid #E5E7EB; padding-top: 4px;">
-              ${inc.description}
+              ${inc.description || ''}
             </div>
             <div style="margin-top: 8px; font-size: 10px; font-weight: 600; color: #2563EB;">
-              Est. Resolution: ${inc.estimatedResolution}
+              Est. Resolution: ${inc.estimatedResolution || 'Active'}
             </div>
           </div>
         `;
@@ -178,9 +192,13 @@ export const InteractiveMap: React.FC = () => {
       });
     }
 
-    // 4. Render Environmental Sensors
+    // 4. Render Environmental Sensors (with Safeguards)
     if (mapLayers.sensors && dashboardData.sensors) {
       dashboardData.sensors.forEach((sensor) => {
+        // Ensure sensor coordinates exist and contain valid numbers
+        const coords = sensor.coordinates || ((sensor as any).lat && (sensor as any).lng ? [(sensor as any).lat, (sensor as any).lng] : null);
+        if (!coords || typeof coords[0] !== 'number' || typeof coords[1] !== 'number') return;
+
         const sColor = sensor.status === 'critical' ? '#DC2626' : sensor.status === 'warning' ? '#D97706' : '#16A34A';
 
         const sensorIcon = L.divIcon({
@@ -190,9 +208,9 @@ export const InteractiveMap: React.FC = () => {
           iconAnchor: [7, 7],
         });
 
-        const marker = L.marker(sensor.coordinates, { icon: sensorIcon });
+        const marker = L.marker([coords[0], coords[1]], { icon: sensorIcon });
         marker.bindTooltip(
-          `<b>${sensor.name}</b><br/>Reading: ${sensor.value} ${sensor.unit} (${sensor.status.toUpperCase()})<br/>District: ${sensor.district}`,
+          `<b>${sensor.name}</b><br/>Reading: ${sensor.value ?? ''} ${sensor.unit ?? ''} (${(sensor.status || 'NORMAL').toUpperCase()})<br/>District: ${sensor.district || 'Taipei'}`,
           { sticky: true }
         );
         layersGroup.addLayer(marker);
@@ -203,7 +221,7 @@ export const InteractiveMap: React.FC = () => {
 
   const resetView = () => {
     if (mapInstanceRef.current) {
-      mapInstanceRef.current.setView([cityConfig.lat, cityConfig.lng], cityConfig.zoom);
+      mapInstanceRef.current.setView([cityConfig.lat ?? 25.05306, cityConfig.lng ?? 121.52639], cityConfig.zoom ?? 12);
     }
   };
 
