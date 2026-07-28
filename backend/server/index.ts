@@ -12,6 +12,7 @@ import { getCityDashboardData, injectCityIncident, resolveCityIncident } from '.
 import { getLiveWeather } from './liveWeather.js';
 import { getLiveAirQuality } from './liveAirQuality.js';
 import { getLiveTraffic, logTrafficStatus } from './liveTraffic.js';
+import { getLiveRoads } from './liveRoads.js';
 import { buildModel, predict, describeModel, computeCorrelations } from './predictionModel.js';
 import fs from 'node:fs';
 import type { CityId } from '../shared/types.js';
@@ -35,7 +36,7 @@ function calculateFloodRisk(rainRate: number): string {
 
 // REST API Routes
 
-// 1. Full Dashboard Summary Endpoint (UPGRADED FOR DYNAMIC LIVE TELEMETRY)
+// 1. Full Dashboard Summary Endpoint
 app.get('/api/dashboard', async (req, res) => {
   const cityId = (req.query.city as CityId) || 'taipei';
   const data = getCityDashboardData(cityId);
@@ -110,7 +111,7 @@ app.get('/api/dashboard', async (req, res) => {
   ];
   data.sensors = liveSensors as any;
 
-  const HORIZONS = [1, 4, 12]; 
+  const HORIZONS = [1, 4, 12];
   let prediction: any = {
     available: false,
     reason: 'No live forecast available',
@@ -185,7 +186,24 @@ app.post('/api/transportation/incidents/:id/resolve', (req, res) => {
   res.json({ success, incidentId: id });
 });
 
-// 5. Environment Current Status Endpoint (UPGRADED FOR LIVE DYNAMIC STREAMING)
+// 4b. Live Road Flow Endpoint
+app.get('/api/transportation/roads', async (req, res) => {
+  const cityId = (req.query.city as CityId) || 'taipei';
+  try {
+    const roads = await getLiveRoads(cityId);
+    res.json({
+      cityId,
+      live: roads !== null,
+      roads: roads ?? [],
+      fetchedAt: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    console.error('[roads] endpoint error:', err.message);
+    res.json({ cityId, live: false, roads: [], fetchedAt: new Date().toISOString() });
+  }
+});
+
+// 5. Environment Current Status Endpoint
 app.get('/api/environment/current', async (req, res) => {
   const cityId = (req.query.city as CityId) || 'taipei';
   const data = getCityDashboardData(cityId);
