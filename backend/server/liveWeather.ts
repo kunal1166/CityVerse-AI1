@@ -35,6 +35,8 @@ export interface LiveWeather {
   humidity: number;
   rainfallRate: number;
   windSpeed: number;
+  windDirection: number;
+  windDirectionCardinal: string;
   condition: string;
   forecast: ForecastHour[]; // starts at the NEXT hour
 }
@@ -43,11 +45,17 @@ export interface LiveWeather {
 const cache = new Map<string, { data: LiveWeather; expires: number }>();
 const CACHE_SECONDS = 300; // 5 minutes
 
+function degreesToCardinal(deg: number): string {
+  const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+  const val = Math.floor((deg / 22.5) + 0.5);
+  return directions[val % 16];
+}
+
 /**
  * Returns live weather, or null if it couldn't be fetched.
  * Callers should treat null as "just use the mock data".
  */
-export async function getLiveWeather(cityId: CityId): Promise<LiveWeather | null> {
+export async function getLiveWeather(cityId: CityId = 'taipei'): Promise<LiveWeather | null> {
   const city = CITIES[cityId] || CITIES.taipei;
 
   // 1. Do we already have a fresh answer?
@@ -61,7 +69,7 @@ export async function getLiveWeather(cityId: CityId): Promise<LiveWeather | null
     const url =
       `https://api.open-meteo.com/v1/forecast` +
       `?latitude=${city.lat}&longitude=${city.lng}` +
-      `&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m` +
+      `&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m` +
       `&hourly=precipitation` +
       `&forecast_hours=24` +
       `&timezone=auto`;
@@ -95,11 +103,15 @@ export async function getLiveWeather(cityId: CityId): Promise<LiveWeather | null
         precipitation: Number(precip[startIndex + i] ?? 0),
       }));
 
+    const windDir = Math.round(c.wind_direction_10m ?? 0);
+
     const weather: LiveWeather = {
       temp: Math.round(c.temperature_2m * 10) / 10,
-      humidity: c.relative_humidity_2m,
-      rainfallRate: c.precipitation,
-      windSpeed: c.wind_speed_10m,
+      humidity: Math.round(c.relative_humidity_2m ?? 0),
+      rainfallRate: Math.round((c.precipitation ?? 0) * 10) / 10,
+      windSpeed: Math.round((c.wind_speed_10m ?? 0) * 10) / 10,
+      windDirection: windDir,
+      windDirectionCardinal: degreesToCardinal(windDir),
       condition: WEATHER_CODES[c.weather_code] || 'Unknown',
       forecast,
     };
@@ -107,8 +119,8 @@ export async function getLiveWeather(cityId: CityId): Promise<LiveWeather | null
     // 3. Remember it, then return it.
     cache.set(cityId, { data: weather, expires: Date.now() + CACHE_SECONDS * 1000 });
     console.log(
-      `[weather] LIVE data for ${city.name}: ${weather.temp}C, ${weather.condition}, ` +
-        `${forecast.length}h forecast`,
+      `[weather] LIVE data for ${city.name}: ${weather.temp}°C, ${weather.condition}, ` +
+        `Wind: ${weather.windSpeed} km/h (${weather.windDirectionCardinal}), ${forecast.length}h forecast`,
     );
     return weather;
   } catch (err: any) {

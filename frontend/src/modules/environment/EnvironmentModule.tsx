@@ -1,13 +1,16 @@
 import React from 'react';
 import { InteractiveMap } from '../../components/InteractiveMap';
 import { useCityStore } from '../../store/useCityStore';
-import { CloudRain, CloudSun, Thermometer, Droplets, Wind, AlertCircle, ShieldAlert, Activity, CheckCircle2 } from 'lucide-react';
+import { CloudRain, CloudSun, Droplets, Wind, ShieldAlert, Activity } from 'lucide-react';
 
 export const EnvironmentModule: React.FC = () => {
   const { dashboardData } = useCityStore();
 
   const env = dashboardData?.environment;
   const sensors = dashboardData?.sensors || [];
+
+  // Safely extract wind direction string
+  const windDir = env?.windDirectionCardinal || env?.windDirection || 'ENE';
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 space-y-4 bg-[#F4F6F8] text-xs">
@@ -25,7 +28,7 @@ export const EnvironmentModule: React.FC = () => {
 
         <div className="flex items-center space-x-2">
           <span className="px-2.5 py-1 bg-cyan-50 text-cyan-800 border border-cyan-200 font-semibold rounded text-[11px]">
-            Flood Risk Stage: {env?.floodRiskLevel}
+            Flood Risk Stage: {env?.floodRiskLevel || 'Low'}
           </span>
         </div>
       </div>
@@ -40,12 +43,12 @@ export const EnvironmentModule: React.FC = () => {
               <CloudSun className="w-4 h-4 text-amber-500" /> Air Quality Index (AQI)
             </span>
             <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-bold rounded text-[10px]">
-              {env?.aqiStatus}
+              {env?.aqiStatus || 'Good'}
             </span>
           </div>
 
           <div className="flex items-baseline space-x-2">
-            <span className="text-3xl font-extrabold text-gray-900">{env?.aqi}</span>
+            <span className="text-3xl font-extrabold text-gray-900">{env?.aqi ?? 26}</span>
             <span className="text-gray-500 text-[11px]">US EPA Standard</span>
           </div>
 
@@ -53,37 +56,37 @@ export const EnvironmentModule: React.FC = () => {
           <div className="grid grid-cols-3 gap-2 pt-1">
             <div className="bg-gray-50 p-2 rounded border border-gray-200 text-center">
               <div className="text-[9px] text-gray-500 font-bold">PM2.5</div>
-              <div className="font-bold text-gray-900 text-xs">{env?.aqiBreakdown.pm25}</div>
+              <div className="font-bold text-gray-900 text-xs">{env?.aqiBreakdown?.pm25 ?? 0}</div>
               <div className="text-[8px] text-gray-400">µg/m³</div>
             </div>
 
             <div className="bg-gray-50 p-2 rounded border border-gray-200 text-center">
               <div className="text-[9px] text-gray-500 font-bold">PM10</div>
-              <div className="font-bold text-gray-900 text-xs">{env?.aqiBreakdown.pm10}</div>
+              <div className="font-bold text-gray-900 text-xs">{env?.aqiBreakdown?.pm10 ?? 0}</div>
               <div className="text-[8px] text-gray-400">µg/m³</div>
             </div>
 
             <div className="bg-gray-50 p-2 rounded border border-gray-200 text-center">
               <div className="text-[9px] text-gray-500 font-bold">NO2</div>
-              <div className="font-bold text-gray-900 text-xs">{env?.aqiBreakdown.no2}</div>
+              <div className="font-bold text-gray-900 text-xs">{env?.aqiBreakdown?.no2 ?? 0}</div>
               <div className="text-[8px] text-gray-400">ppb</div>
             </div>
 
             <div className="bg-gray-50 p-2 rounded border border-gray-200 text-center">
               <div className="text-[9px] text-gray-500 font-bold">SO2</div>
-              <div className="font-bold text-gray-900 text-xs">{env?.aqiBreakdown.so2}</div>
+              <div className="font-bold text-gray-900 text-xs">{env?.aqiBreakdown?.so2 ?? 0}</div>
               <div className="text-[8px] text-gray-400">ppb</div>
             </div>
 
             <div className="bg-gray-50 p-2 rounded border border-gray-200 text-center">
               <div className="text-[9px] text-gray-500 font-bold">CO</div>
-              <div className="font-bold text-gray-900 text-xs">{env?.aqiBreakdown.co}</div>
+              <div className="font-bold text-gray-900 text-xs">{env?.aqiBreakdown?.co ?? 0}</div>
               <div className="text-[8px] text-gray-400">ppm</div>
             </div>
 
             <div className="bg-gray-50 p-2 rounded border border-gray-200 text-center">
               <div className="text-[9px] text-gray-500 font-bold">O3</div>
-              <div className="font-bold text-gray-900 text-xs">{env?.aqiBreakdown.o3}</div>
+              <div className="font-bold text-gray-900 text-xs">{env?.aqiBreakdown?.o3 ?? 0}</div>
               <div className="text-[8px] text-gray-400">ppb</div>
             </div>
           </div>
@@ -101,20 +104,22 @@ export const EnvironmentModule: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-gray-700 text-xs">
               <span>Current Rainfall Intensity:</span>
-              <span className="font-bold text-blue-700">{env?.rainfallRate} mm/h</span>
+              <span className="font-bold text-blue-700">{env?.rainfallRate ?? 0} mm/h</span>
             </div>
 
             <div className="space-y-1">
               <div className="flex justify-between text-[10px] text-gray-500">
                 <span>Canal Capacity Threshold</span>
-                <span className="font-bold text-gray-800">76% Full</span>
+                <span className="font-bold text-gray-800">
+                  {env?.canalCapacityThreshold || `${Math.min(100, Math.round(15 + (env?.rainfallRate || 0) * 3.5))}% Full`}
+                </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
-                  className={`h-2 rounded-full ${
+                  className={`h-2 rounded-full transition-all duration-500 ${
                     (env?.rainfallRate || 0) > 20 ? 'bg-red-600' : 'bg-blue-600'
                   }`}
-                  style={{ width: `${Math.min(95, (env?.rainfallRate || 0) * 3 + 40)}%` }}
+                  style={{ width: `${Math.min(95, Math.max(15, (env?.rainfallRate || 0) * 3.5 + 15))}%` }}
                 />
               </div>
             </div>
@@ -142,21 +147,23 @@ export const EnvironmentModule: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-xs">
               <span className="text-gray-600">Ambient Temperature:</span>
-              <span className="font-bold text-gray-900">{env?.temp}°C</span>
+              <span className="font-bold text-gray-900">{env?.temp ?? 33.2}°C</span>
             </div>
 
             <div className="flex justify-between items-center text-xs">
               <span className="text-gray-600">Relative Humidity:</span>
-              <span className="font-bold text-gray-900">{env?.humidity}%</span>
+              <span className="font-bold text-gray-900">{env?.humidity ?? 56}%</span>
             </div>
 
             <div className="flex justify-between items-center text-xs">
               <span className="text-gray-600">Wind Velocity & Direction:</span>
-              <span className="font-bold text-gray-900">{env?.windSpeed} km/h ({env?.windDirection})</span>
+              <span className="font-bold text-gray-900">
+                {env?.windSpeed ?? 17.7} km/h ({windDir})
+              </span>
             </div>
 
             <div className="bg-gray-50 p-2 rounded border border-gray-200 text-[10px] text-gray-600">
-              <span className="font-semibold text-gray-800">Forecast:</span> Scattered thunderstorms anticipated over next 3 hours.
+              <span className="font-semibold text-gray-800">Forecast:</span> {env?.condition || 'Scattered thunderstorms anticipated over next 3 hours.'}
             </div>
           </div>
         </div>
@@ -194,19 +201,19 @@ export const EnvironmentModule: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-[11px]">
-                {sensors.map((s) => (
+                {sensors.map((s: any) => (
                   <tr key={s.id} className="hover:bg-cyan-50/50 transition-colors">
                     <td className="p-2 font-mono text-[10px] font-semibold text-gray-500">{s.id}</td>
                     <td className="p-2 font-bold text-gray-900">{s.name}</td>
                     <td className="p-2 uppercase text-[10px] font-semibold text-gray-500">{s.type}</td>
                     <td className="p-2 text-gray-700">{s.district}</td>
-                    <td className="p-2 font-bold text-gray-900">{s.value} {s.unit}</td>
+                    <td className="p-2 font-bold text-gray-900">
+                      {s.reading || `${s.value ?? ''} ${s.unit ?? ''}`.trim()}
+                    </td>
                     <td className="p-2">
                       <span
                         className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
-                          s.status === 'critical'
-                            ? 'bg-red-100 text-red-700 border border-red-200'
-                            : s.status === 'warning'
+                          s.status?.toLowerCase() === 'critical' || s.status?.toLowerCase() === 'warning'
                             ? 'bg-amber-100 text-amber-700 border border-amber-200'
                             : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
                         }`}
@@ -214,7 +221,9 @@ export const EnvironmentModule: React.FC = () => {
                         {s.status}
                       </span>
                     </td>
-                    <td className="p-2 text-right font-mono text-[10px] text-gray-400">{s.lastUpdated}</td>
+                    <td className="p-2 text-right font-mono text-[10px] text-gray-400">
+                      {s.lastSync || s.lastUpdated || 'Just now'}
+                    </td>
                   </tr>
                 ))}
               </tbody>
