@@ -1,7 +1,25 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { useCityStore, CITIES_CONFIG } from '../store/useCityStore';
+import { useThemeStore } from '../store/useThemeStore';
 import { Layers, Navigation, Eye, EyeOff } from 'lucide-react';
+
+const TILE_URLS = {
+  light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+};
+
+// Friendlier display labels for layer keys that don't look right under
+// plain CSS `capitalize` (e.g. "aqi" -> "Aqi" instead of "AQI").
+const LAYER_LABELS: Record<string, string> = {
+  traffic: 'Traffic',
+  aqi: 'AQI',
+  flood: 'Flood',
+  incidents: 'Incidents',
+  transit: 'Transit',
+  weather: 'Weather',
+  sensors: 'Sensors',
+};
 
 export const InteractiveMap: React.FC = () => {
   const { 
@@ -12,10 +30,12 @@ export const InteractiveMap: React.FC = () => {
     setSelectedIncident,
     searchQuery
   } = useCityStore();
+  const theme = useThemeStore((s) => s.theme);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layersGroupRef = useRef<L.LayerGroup | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
 
   // Safe fallback to Taipei cityConfig to prevent undefined errors
   const cityConfig = CITIES_CONFIG?.[selectedCity] || CITIES_CONFIG?.taipei || {
@@ -39,7 +59,7 @@ export const InteractiveMap: React.FC = () => {
         zoomControl: false,
       });
 
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      tileLayerRef.current = L.tileLayer(theme === 'dark' ? TILE_URLS.dark : TILE_URLS.light, {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
         subdomains: 'abcd',
         maxZoom: 19,
@@ -53,7 +73,14 @@ export const InteractiveMap: React.FC = () => {
     } else {
       mapInstanceRef.current.setView([centerLat, centerLng], zoomLevel);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCity, cityConfig]);
+
+  // Swap the basemap tiles when the app theme changes, instead of rebuilding the map.
+  useEffect(() => {
+    if (!tileLayerRef.current) return;
+    tileLayerRef.current.setUrl(theme === 'dark' ? TILE_URLS.dark : TILE_URLS.light);
+  }, [theme]);
 
   // Handle Layer updates when mapLayers or dashboardData changes
   useEffect(() => {
@@ -110,7 +137,7 @@ export const InteractiveMap: React.FC = () => {
           opacity: corridor.opacity,
           lineCap: 'round',
         });
-        line.bindTooltip(corridor.label, { sticky: true });
+        line.bindTooltip(corridor.label, { sticky: true, className: 'cv-leaflet-tooltip' });
         layersGroup.addLayer(line);
       });
     }
@@ -128,7 +155,7 @@ export const InteractiveMap: React.FC = () => {
         weight: 1.5,
         dashArray: '4, 4',
       });
-      aqiZone.bindTooltip(`Urban AQI Radius: ${aqi} (${dashboardData.environment.aqiStatus || 'Good'})`, { sticky: true });
+      aqiZone.bindTooltip(`Urban AQI Radius: ${aqi} (${dashboardData.environment.aqiStatus || 'Good'})`, { sticky: true, className: 'cv-leaflet-tooltip' });
       layersGroup.addLayer(aqiZone);
     }
 
@@ -163,27 +190,30 @@ export const InteractiveMap: React.FC = () => {
 
         const marker = L.marker([coords[0], coords[1]], { icon: customIcon });
 
+        // Colors here are set via the cv-leaflet-popup class in index.css
+        // (which responds to the .dark theme class) rather than inline,
+        // so the popup no longer shows dark text on a dark background.
         const popupContent = `
-          <div style="font-family: Inter, sans-serif; padding: 4px; max-width: 220px;">
-            <div style="font-size: 10px; font-weight: 700; color: ${color}; text-transform: uppercase;">
+          <div class="cv-leaflet-popup">
+            <div class="cv-leaflet-popup-kicker" style="color: ${color};">
               ${inc.severity} ${(inc.type || '').replace('_', ' ')}
             </div>
-            <div style="font-size: 12px; font-weight: 700; color: #111827; margin-top: 2px;">
+            <div class="cv-leaflet-popup-title">
               ${inc.title || 'Incident Alert'}
             </div>
-            <div style="font-size: 10px; color: #6B7280; margin-top: 4px;">
+            <div class="cv-leaflet-popup-subtle">
               ${inc.locationName || 'Taipei Sector'}
             </div>
-            <div style="font-size: 10px; color: #374151; margin-top: 6px; border-top: 1px solid #E5E7EB; padding-top: 4px;">
+            <div class="cv-leaflet-popup-desc">
               ${inc.description || ''}
             </div>
-            <div style="margin-top: 8px; font-size: 10px; font-weight: 600; color: #2563EB;">
+            <div class="cv-leaflet-popup-eta">
               Est. Resolution: ${inc.estimatedResolution || 'Active'}
             </div>
           </div>
         `;
 
-        marker.bindPopup(popupContent);
+        marker.bindPopup(popupContent, { className: 'cv-leaflet-popup-wrapper' });
         marker.on('click', () => {
           setSelectedIncident(inc);
         });
@@ -211,7 +241,7 @@ export const InteractiveMap: React.FC = () => {
         const marker = L.marker([coords[0], coords[1]], { icon: sensorIcon });
         marker.bindTooltip(
           `<b>${sensor.name}</b><br/>Reading: ${sensor.value ?? ''} ${sensor.unit ?? ''} (${(sensor.status || 'NORMAL').toUpperCase()})<br/>District: ${sensor.district || 'Taipei'}`,
-          { sticky: true }
+          { sticky: true, className: 'cv-leaflet-tooltip' }
         );
         layersGroup.addLayer(marker);
       });
@@ -226,20 +256,20 @@ export const InteractiveMap: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full h-full bg-gray-100 flex flex-col rounded-md overflow-hidden border border-gray-200">
+    <div className="relative w-full h-full bg-gray-100 dark:bg-slate-800 flex flex-col rounded-md overflow-hidden border border-gray-200 dark:border-slate-700">
       {/* Leaflet Container */}
       <div ref={mapContainerRef} className="w-full h-full z-0" />
 
       {/* Map Control Bar Overlay (Top Left) */}
-      <div className="absolute top-3 left-3 z-10 bg-white/95 backdrop-blur-xs p-2 rounded-md border border-gray-200 shadow-md text-xs space-y-2">
-        <div className="flex items-center justify-between pb-1.5 border-b border-gray-100 font-semibold text-gray-800 text-[11px]">
+      <div className="absolute top-3 left-3 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs p-2 rounded-md border border-gray-200 dark:border-slate-700 shadow-md text-xs space-y-2">
+        <div className="flex items-center justify-between pb-1.5 border-b border-gray-100 dark:border-slate-700 font-semibold text-gray-800 dark:text-slate-100 text-[11px]">
           <span className="flex items-center gap-1.5">
-            <Layers className="w-3.5 h-3.5 text-blue-600" /> Map Intelligence Layers
+            <Layers className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Map Intelligence Layers
           </span>
           <button
             onClick={resetView}
             title="Recenter City Map"
-            className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 text-[10px]"
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium flex items-center gap-1 text-[10px]"
           >
             <Navigation className="w-3 h-3" /> Recenter
           </button>
@@ -255,12 +285,12 @@ export const InteractiveMap: React.FC = () => {
                 onClick={() => toggleMapLayer(layerKey)}
                 className={`flex items-center justify-between px-2 py-1 rounded text-[10px] font-medium transition-colors border ${
                   isEnabled
-                    ? 'bg-blue-50 text-blue-700 border-blue-200 font-semibold'
-                    : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
+                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30 font-semibold'
+                    : 'bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-700'
                 }`}
               >
-                <span className="capitalize">{layerKey}</span>
-                {isEnabled ? <Eye className="w-3 h-3 text-blue-600 ml-1" /> : <EyeOff className="w-3 h-3 text-gray-400 ml-1" />}
+                <span>{LAYER_LABELS[layerKey] ?? layerKey}</span>
+                {isEnabled ? <Eye className="w-3 h-3 text-blue-600 dark:text-blue-400 ml-1" /> : <EyeOff className="w-3 h-3 text-gray-400 dark:text-slate-500 ml-1" />}
               </button>
             );
           })}
@@ -268,19 +298,19 @@ export const InteractiveMap: React.FC = () => {
       </div>
 
       {/* Map Legend Overlay (Bottom Left) */}
-      <div className="absolute bottom-3 left-3 z-10 bg-white/95 backdrop-blur-xs px-2.5 py-2 rounded-md border border-gray-200 shadow-sm text-[10px] space-y-1">
-        <div className="font-semibold text-gray-700 text-[10px]">Map Legend</div>
-        <div className="flex items-center space-x-3 text-gray-600">
+      <div className="absolute bottom-3 left-3 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs px-2.5 py-2 rounded-md border border-gray-200 dark:border-slate-700 shadow-sm text-[10px] space-y-1">
+        <div className="font-semibold text-gray-700 dark:text-slate-200 text-[10px]">Map Legend</div>
+        <div className="flex items-center space-x-3 text-gray-600 dark:text-slate-300">
           <div className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
             <span>Normal</span>
           </div>
           <div className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-600" />
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-600 dark:bg-amber-400" />
             <span>Moderate</span>
           </div>
           <div className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-600" />
+            <span className="w-2.5 h-2.5 rounded-full bg-red-600 dark:bg-red-400" />
             <span>Critical Incident</span>
           </div>
         </div>

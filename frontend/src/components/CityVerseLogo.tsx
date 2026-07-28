@@ -113,15 +113,15 @@ export const CityVerseLogo: React.FC<CityVerseLogoProps> = ({
         {/* Modern Geometric Monogram Emblem: Enterprise Grid & Node Stack */}
         <g transform="translate(0, 2)">
           {/* Outer Pillar Left */}
-          <rect x="0" y="0" width="6" height="28" rx="1.5" fill={textColor} />
+          <rect x="0" y="0" width="6" height="28" rx="1.5" fill={textColor} className="dark:fill-white" />
           {/* Middle Stack Top */}
-          <rect x="9" y="0" width="6" height="12" rx="1.5" fill={accentColor} />
+          <rect x="9" y="0" width="6" height="12" rx="1.5" fill={accentColor} className="dark:fill-blue-400" />
           {/* Middle Stack Bottom */}
-          <rect x="9" y="16" width="6" height="12" rx="1.5" fill={textColor} />
+          <rect x="9" y="16" width="6" height="12" rx="1.5" fill={textColor} className="dark:fill-white" />
           {/* Outer Pillar Right */}
-          <rect x="18" y="0" width="6" height="28" rx="1.5" fill={textColor} />
+          <rect x="18" y="0" width="6" height="28" rx="1.5" fill={textColor} className="dark:fill-white" />
           {/* Connecting Active AI Pulse Node */}
-          <circle cx="12" cy="14" r="1.5" fill="#FFFFFF" />
+          <circle cx="12" cy="14" r="1.5" fill="#FFFFFF" className="dark:fill-slate-900" />
         </g>
 
         {/* Wordmark Text: "CityVerse" */}
@@ -129,6 +129,7 @@ export const CityVerseLogo: React.FC<CityVerseLogoProps> = ({
           x="36"
           y="25"
           fill={textColor}
+          className="dark:fill-white"
           style={{
             fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
             fontSize: '28px',
@@ -141,7 +142,7 @@ export const CityVerseLogo: React.FC<CityVerseLogoProps> = ({
 
         {/* Wordmark Badge: "AI" in Royal Blue Pill (#2563EB) */}
         <g transform="translate(198, 2)">
-          <rect x="0" y="1" width="38" height="25" rx="4" fill={accentColor} />
+          <rect x="0" y="1" width="38" height="25" rx="4" fill={accentColor} className="dark:fill-blue-500" />
           <text
             x="8"
             y="19"

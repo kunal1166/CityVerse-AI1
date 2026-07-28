@@ -18,8 +18,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <!-- Apply saved/preferred theme before first paint to avoid a light-mode flash -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('cityverse-theme');
+          var isDark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (isDark) document.documentElement.classList.add('dark');
+          document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="h-full font-['Inter',sans-serif] text-gray-900 antialiased selection:bg-blue-600 selection:text-white">
+  <body class="h-full font-['Inter',sans-serif] text-gray-900 dark:text-slate-100 bg-[#F4F6F8] dark:bg-slate-950 antialiased selection:bg-blue-600 selection:text-white transition-colors duration-300">
     <div id="root" class="h-full"></div>
 
     <!-- Service Worker Registration -->
