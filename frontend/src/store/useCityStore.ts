@@ -53,18 +53,6 @@ interface CityState {
 }
 
 export const CITIES_CONFIG = {
-  singapore: {
-    id: 'singapore' as CityId,
-    name: 'Singapore',
-    country: 'Singapore',
-    flag: '🇸🇬',
-    lat: 1.3521,
-    lng: 103.8198,
-    zoom: 12,
-    timezone: 'Asia/Singapore (SGT UTC+8)',
-    population: '5.92M',
-    keyDistricts: ['Marina Bay', 'Orchard Road', 'Jurong East', 'Changi', 'Woodlands', 'Paya Lebar'],
-  },
   taipei: {
     id: 'taipei' as CityId,
     name: 'Taipei',
@@ -77,22 +65,10 @@ export const CITIES_CONFIG = {
     population: '2.50M',
     keyDistricts: ['Xinyi District', 'Daan District', 'Neihu Tech Park', 'Zhongshan', 'Songshan', 'Wanhua'],
   },
-  bengaluru: {
-    id: 'bengaluru' as CityId,
-    name: 'Bengaluru',
-    country: 'India',
-    flag: '🇮🇳',
-    lat: 12.9716,
-    lng: 77.5946,
-    zoom: 12,
-    timezone: 'Asia/Kolkata (IST UTC+5:30)',
-    population: '13.19M',
-    keyDistricts: ['ORR Electronic City', 'Whitefield', 'Indiranagar', 'Hebbal', 'Koramangala', 'Central Silk Board'],
-  },
 };
 
 export const useCityStore = create<CityState>((set, get) => ({
-  selectedCity: 'singapore',
+  selectedCity: 'taipei',
   activeTab: 'overview',
   searchQuery: '',
   mapLayers: {
@@ -179,7 +155,7 @@ export const useCityStore = create<CityState>((set, get) => ({
   resolveIncident: async (incidentId) => {
     const currentCity = get().selectedCity;
     try {
-      // The city must be passed: without it the server defaults to 'singapore'
+      // The city must be passed: without it the server defaults to 'taipei'
       // and silently fails to resolve incidents belonging to any other city.
       const res = await fetch(
         `/api/transportation/incidents/${incidentId}/resolve?city=${currentCity}`,

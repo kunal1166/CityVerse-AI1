@@ -13,8 +13,11 @@
 import dotenv from 'dotenv';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = process.cwd();
+// Resolve relative to this file, so it works no matter which directory
+// `npm run dev` was launched from.
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 // Highest priority first. Values already set win, so .env.local overrides .env.
 for (const file of ['.env.local', '.env']) {

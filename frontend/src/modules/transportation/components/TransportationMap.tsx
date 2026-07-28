@@ -106,7 +106,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
   activeScenarioName,
 }) => {
   const { selectedCity, dashboardData, searchQuery, setSearchQuery } = useCityStore();
-  const cityConfig = CITIES_CONFIG[selectedCity] || CITIES_CONFIG['singapore'];
+  const cityConfig = CITIES_CONFIG[selectedCity] || CITIES_CONFIG['taipei'];
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -238,65 +238,14 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
 
   // Transit Stations Mock Generator
   const transitStations = useMemo<TransitStation[]>(() => {
-    if (selectedCity === 'singapore') {
-      return [
-        { id: 'st-sg-1', name: 'Orchard MRT Station', line: 'North-South Line', type: 'Metro', coordinates: [1.304, 103.832], passengersPerHour: 5800, delayMins: 0, nextArrivalMin: 2, status: 'Operational' },
-        { id: 'st-sg-2', name: 'Newton MRT Interchange', line: 'Downtown Line', type: 'Metro', coordinates: [1.312, 103.838], passengersPerHour: 4200, delayMins: 1, nextArrivalMin: 3, status: 'Operational' },
-        { id: 'st-sg-3', name: 'Marina Bay Terminal', line: 'Circle Line', type: 'Metro', coordinates: [1.276, 103.854], passengersPerHour: 6400, delayMins: 4, nextArrivalMin: 1, status: 'Crowded' },
-        { id: 'st-sg-4', name: 'Jurong East Transit Hub', line: 'East-West Line', type: 'Metro', coordinates: [1.333, 103.742], passengersPerHour: 7100, delayMins: 2, nextArrivalMin: 4, status: 'Operational' },
-      ];
-    } else if (selectedCity === 'taipei') {
       return [
         { id: 'st-tp-1', name: 'Taipei Main Station', line: 'Bannan Line', type: 'Metro', coordinates: [25.047, 121.517], passengersPerHour: 8200, delayMins: 0, nextArrivalMin: 2, status: 'Operational' },
         { id: 'st-tp-2', name: 'Taipei 101 / World Trade Center', line: 'Tamsui-Xinyi Line', type: 'Metro', coordinates: [25.033, 121.564], passengersPerHour: 4900, delayMins: 0, nextArrivalMin: 3, status: 'Operational' },
       ];
-    } else {
-      return [
-        { id: 'st-blr-1', name: 'Silk Board Bus Rapid Stop', line: 'BMTC Corridor', type: 'Bus', coordinates: [12.917, 77.623], passengersPerHour: 6200, delayMins: 12, nextArrivalMin: 8, status: 'Minor Delay' },
-        { id: 'st-blr-2', name: 'Indiranagar Metro Station', line: 'Namma Metro Purple Line', type: 'Metro', coordinates: [12.978, 77.640], passengersPerHour: 5100, delayMins: 2, nextArrivalMin: 4, status: 'Operational' },
-      ];
-    }
   }, [selectedCity]);
 
   // AI Route Planner Options per city
   const routeOptions = useMemo<RouteOption[]>(() => {
-    if (selectedCity === 'singapore') {
-      return [
-        {
-          id: 'route-rec',
-          name: 'Recommended AI Route (via MCE Express)',
-          distanceKm: 18.4,
-          durationMin: 22,
-          congestionLevel: 'Low',
-          tollsCost: '$2.20 ERP',
-          viaRoads: ['Marina Coastal Expressway', 'Ayer Rajah Expressway'],
-          aiReasoning: 'AI predicts lowest signal wait times and zero incident bottlenecks on tunnel corridors.',
-          isRecommended: true,
-        },
-        {
-          id: 'route-fast',
-          name: 'Fastest Arterial (via CTE Expressway)',
-          distanceKm: 16.8,
-          durationMin: 28,
-          congestionLevel: 'High',
-          tollsCost: '$3.50 ERP',
-          viaRoads: ['Central Expressway', 'Pan Island Expressway'],
-          aiReasoning: 'Shorter distance but heavy morning merge queue at Braddell Flyover.',
-          isRecommended: false,
-        },
-        {
-          id: 'route-alt',
-          name: 'Alternative Local Arterial (via Thomson Rd)',
-          distanceKm: 20.1,
-          durationMin: 34,
-          congestionLevel: 'Moderate',
-          tollsCost: '$0.00 ERP',
-          viaRoads: ['Upper Thomson Road', 'Newton Road'],
-          aiReasoning: 'Zero ERP toll option with moderate traffic light cycle delays.',
-          isRecommended: false,
-        },
-      ];
-    } else if (selectedCity === 'taipei') {
       return [
         {
           id: 'route-rec',
@@ -321,37 +270,11 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
           isRecommended: false,
         },
       ];
-    } else {
-      return [
-        {
-          id: 'route-rec',
-          name: 'Recommended AI Route (via Outer Ring Expressway)',
-          distanceKm: 48.0,
-          durationMin: 55,
-          congestionLevel: 'Moderate',
-          tollsCost: '₹120 Toll',
-          viaRoads: ['Hebbal Flyover', 'Hosur Elevated Tollway'],
-          aiReasoning: 'Bypasses Central Business District congestion hot spots.',
-          isRecommended: true,
-        },
-        {
-          id: 'route-fast',
-          name: 'Direct City Center Route (via Bellary Rd)',
-          distanceKm: 45.2,
-          durationMin: 85,
-          congestionLevel: 'High',
-          tollsCost: 'Free',
-          viaRoads: ['Bellary Road', 'Silk Board Junction'],
-          aiReasoning: 'Severe bottleneck at Silk Board construction zone.',
-          isRecommended: false,
-        },
-      ];
-    }
   }, [selectedCity]);
 
   // Adjust road metrics dynamically based on timelineHour & scenarioMode
   const adjustedRoads = useMemo(() => {
-    const rawRoads = CITY_ROADS[selectedCity] || CITY_ROADS['singapore'];
+    const rawRoads = CITY_ROADS[selectedCity] || CITY_ROADS['taipei'];
 
     // Timeline factor: peak hours (8-9:30 AM, 5:30-7:30 PM) increase congestion
     const isMorningPeak = debouncedTimelineHour >= 8.0 && debouncedTimelineHour <= 9.5;
@@ -695,7 +618,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
 
     layersGroup.clearLayers();
 
-    const cameras = CITY_CAMERAS[selectedCity] || CITY_CAMERAS['singapore'];
+    const cameras = CITY_CAMERAS[selectedCity] || CITY_CAMERAS['taipei'];
 
     // Helper: Determine road line color based on active View Mode
     const getRoadColor = (road: RoadSegment) => {
@@ -900,7 +823,7 @@ export const TransportationMap: React.FC<TransportationMapProps> = ({
       routeOptions.forEach((rt) => {
         const isSelected = rt.id === selectedRouteId;
         const color = rt.isRecommended ? '#16A34A' : rt.id === 'route-fast' ? '#2563EB' : '#F59E0B';
-        const rawRoads = CITY_ROADS[selectedCity] || CITY_ROADS['singapore'];
+        const rawRoads = CITY_ROADS[selectedCity] || CITY_ROADS['taipei'];
 
         // Find matching road segments for this specific route's corridors
         const matchedRoads = rawRoads.filter((r) =>

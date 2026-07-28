@@ -1,4 +1,4 @@
-export type CityId = 'singapore' | 'taipei' | 'bengaluru';
+export type CityId = 'taipei';
 
 export interface CityConfig {
   id: CityId;

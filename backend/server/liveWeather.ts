@@ -13,7 +13,7 @@
  */
 
 import { CITIES } from './cityData.js';
-import type { CityId } from '../src/types/index.js';
+import type { CityId } from '../shared/types.js';
 
 // Open-Meteo describes the sky with a number (the WMO standard). Translate it.
 const WEATHER_CODES: Record<number, string> = {
@@ -48,7 +48,7 @@ const CACHE_SECONDS = 300; // 5 minutes
  * Callers should treat null as "just use the mock data".
  */
 export async function getLiveWeather(cityId: CityId): Promise<LiveWeather | null> {
-  const city = CITIES[cityId] || CITIES.singapore;
+  const city = CITIES[cityId] || CITIES.taipei;
 
   // 1. Do we already have a fresh answer?
   const hit = cache.get(cityId);
