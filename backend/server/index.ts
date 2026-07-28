@@ -12,6 +12,7 @@ import { getCityDashboardData, injectCityIncident, resolveCityIncident } from '.
 import { getLiveWeather } from './liveWeather.js';
 import { getLiveAirQuality } from './liveAirQuality.js';
 import { getLiveTraffic, logTrafficStatus } from './liveTraffic.js';
+import { getLiveRoads } from './liveRoads.js';
 import { buildModel, predict, describeModel, computeCorrelations } from './predictionModel.js';
 import fs from 'node:fs';
 import type { CityId } from '../shared/types.js';
@@ -118,6 +119,26 @@ app.post('/api/transportation/incidents/:id/resolve', (req, res) => {
   const cityId = (req.query.city as CityId) || 'taipei';
   const success = resolveCityIncident(cityId, id);
   res.json({ success, incidentId: id });
+});
+
+// 4b. Live Road Flow Endpoint
+// Returns one live TomTom reading per road on the transportation map.
+// `live: false` means no API key or the fetch failed - the frontend then
+// keeps its built-in CITY_ROADS numbers instead.
+app.get('/api/transportation/roads', async (req, res) => {
+  const cityId = (req.query.city as CityId) || 'taipei';
+  try {
+    const roads = await getLiveRoads(cityId);
+    res.json({
+      cityId,
+      live: roads !== null,
+      roads: roads ?? [],
+      fetchedAt: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    console.error('[roads] endpoint error:', err.message);
+    res.json({ cityId, live: false, roads: [], fetchedAt: new Date().toISOString() });
+  }
 });
 
 // 5. Environment Current Status Endpoint
