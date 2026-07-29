@@ -53,7 +53,37 @@ export const Taiwan3DMap: React.FC = () => {
     if (mapContainer.current) {
       mapInstance.current = new maplibregl.Map({
         container: mapContainer.current,
-        style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+        // A raster tile source instead of a vector style.json: a vector style
+        // pulls in a style document plus separate sprite/glyph/vector-tile
+        // requests, any one of which can be blocked by an extension or
+        // network policy and leave the map blank with no console error.
+        // Raster tiles are a single, well-cached image request per tile and
+        // are far less likely to silently fail.
+        style: {
+          version: 8,
+          sources: {
+            'carto-dark': {
+              type: 'raster',
+              tiles: [
+                'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+                'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+                'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+                'https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+              ],
+              tileSize: 256,
+              attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            },
+          },
+          layers: [
+            {
+              id: 'carto-dark-layer',
+              type: 'raster',
+              source: 'carto-dark',
+              minzoom: 0,
+              maxzoom: 20,
+            },
+          ],
+        },
         center: [121.0, 23.8],
         zoom: 7.2,
         pitch: 50,
@@ -61,6 +91,12 @@ export const Taiwan3DMap: React.FC = () => {
       });
 
       mapInstance.current.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+      // Surface tile/style failures in the console instead of a silent
+      // blank map, so any remaining issue is diagnosable.
+      mapInstance.current.on('error', (e: any) => {
+        console.error('[Taiwan3DMap] MapLibre error:', e?.error || e);
+      });
     }
 
     const fetchRealData = async () => {
