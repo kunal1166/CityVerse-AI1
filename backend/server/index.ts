@@ -1,5 +1,6 @@
 import './env.js'; 
 import express from 'express';
+import cors from 'cors';
 import path from 'path';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import {
@@ -20,6 +21,22 @@ import 'dotenv/config';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
+
+// Allow the deployed frontend (and any other explicitly listed origins) to
+// call this API from a different domain. FRONTEND_ORIGIN can be a single
+// URL or a comma-separated list (e.g. your Vercel prod + preview URLs).
+// If it's not set, allow any origin — convenient for local dev/testing,
+// but you should set FRONTEND_ORIGIN in production.
+const allowedOrigins = (process.env.FRONTEND_ORIGIN || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+  }),
+);
 
 app.use(express.json());
 
