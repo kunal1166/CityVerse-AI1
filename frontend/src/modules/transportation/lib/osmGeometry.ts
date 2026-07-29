@@ -13,6 +13,7 @@
  */
 
 import type { RoadSegment, RoadType } from '../transportationTypes';
+import { apiUrl } from '../../../lib/api';
 
 export interface OsmStation {
   id: string;
@@ -133,7 +134,7 @@ export function osmRoadsToSegments(
  */
 export async function loadOsmGeometry(cityId: string): Promise<OsmGeometry | null> {
   try {
-    const res = await fetch(`/api/geometry?city=${cityId}`);
+    const res = await fetch(apiUrl(`/api/geometry?city=${cityId}`));
     if (res.status === 404) {
       console.info(
         `[geometry] No OSM data for ${cityId}. Using built-in roads. ` +

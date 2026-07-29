@@ -10,6 +10,7 @@
 
 import { useEffect, useState } from 'react';
 import { CityId } from '../../types';
+import { apiUrl } from '../../lib/api';
 
 export interface LiveRoadFlow {
   roadId: string;
@@ -45,7 +46,7 @@ export function useLiveRoads(cityId: CityId): LiveRoadsState {
 
     const load = async () => {
       try {
-        const res = await fetch(`/api/transportation/roads?city=${cityId}`);
+        const res = await fetch(apiUrl(`/api/transportation/roads?city=${cityId}`));
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
         if (cancelled) return;

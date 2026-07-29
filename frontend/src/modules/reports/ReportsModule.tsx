@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useCityStore } from '../../store/useCityStore';
+import { apiUrl } from '../../lib/api';
 import { FileText, Download, Sparkles, FileSpreadsheet, Printer, CheckCircle2, Shield, Calendar, Loader2 } from 'lucide-react';
 
 export const ReportsModule: React.FC = () => {
@@ -17,7 +18,7 @@ export const ReportsModule: React.FC = () => {
     setReportGenerated(false);
 
     try {
-      const res = await fetch('/api/ai/analyze', {
+      const res = await fetch(apiUrl('/api/ai/analyze'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

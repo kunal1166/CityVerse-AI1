@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { CityId, CityDashboardData, RoadIncident } from '../types';
+import { apiUrl } from '../lib/api';
 
 // Change line 4 to include 'taiwan3d'
 export type TabType = 'overview' | 'transportation' | 'environment' | 'analytics' | 'reports' | 'settings' | 'taiwan3d';
@@ -122,7 +123,7 @@ export const useCityStore = create<CityState>((set, get) => ({
     const targetCity = cityId || get().selectedCity;
     set({ isLoading: true, error: null });
     try {
-      const res = await fetch(`/api/dashboard?city=${targetCity}`);
+      const res = await fetch(apiUrl(`/api/dashboard?city=${targetCity}`));
       if (!res.ok) throw new Error('Failed to load city telemetry data');
       const data: CityDashboardData = await res.json();
       set({ 
@@ -139,7 +140,7 @@ export const useCityStore = create<CityState>((set, get) => ({
   injectIncident: async (incidentPayload) => {
     const currentCity = get().selectedCity;
     try {
-      const res = await fetch('/api/simulation/inject', {
+      const res = await fetch(apiUrl('/api/simulation/inject'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cityId: currentCity, incident: incidentPayload }),
@@ -158,7 +159,7 @@ export const useCityStore = create<CityState>((set, get) => ({
       // The city must be passed: without it the server defaults to 'taipei'
       // and silently fails to resolve incidents belonging to any other city.
       const res = await fetch(
-        `/api/transportation/incidents/${incidentId}/resolve?city=${currentCity}`,
+        apiUrl(`/api/transportation/incidents/${incidentId}/resolve?city=${currentCity}`),
         { method: 'POST' },
       );
       if (!res.ok) throw new Error('Resolve request rejected by server');

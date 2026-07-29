@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrainCircuit, AlertTriangle, Clock, Activity, Zap } from 'lucide-react';
+import { apiUrl } from '../lib/api';
 
 interface HorizonPrediction {
   time: string;
@@ -37,7 +38,7 @@ export const AgenticAnalyzer: React.FC<AgenticAnalyzerProps> = ({ cityId, correl
     const fetchAgenticInsights = async () => {
       setLoading(true);
       try {
-        const response = await fetch('/api/agent/analytics-insight', {
+        const response = await fetch(apiUrl('/api/agent/analytics-insight'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ cityId, correlations: correlations || [], trends: trends || [] }),

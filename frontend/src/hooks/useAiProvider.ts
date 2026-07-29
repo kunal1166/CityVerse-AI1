@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { apiUrl } from '../lib/api';
 
 export interface AiProviderInfo {
   provider: string;
@@ -24,7 +25,7 @@ export function useAiProvider(): AiProviderInfo {
   useEffect(() => {
     let cancelled = false;
 
-    fetch('/api/ai/info')
+    fetch(apiUrl('/api/ai/info'))
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!cancelled && data) setInfo(data as AiProviderInfo);

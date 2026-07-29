@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
 // @ts-ignore
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { apiUrl } from '../lib/api';
 import { Globe, ShieldCheck, Layers, ChevronUp, ChevronDown, Sparkles, Clock, Zap } from 'lucide-react';
 
 const TAIWAN_REGIONS = [
@@ -86,7 +87,7 @@ export const Taiwan3DMap: React.FC = () => {
             setStatusText(`Agent analyzing thermal risks via Gemini for ${region.name}...`);
 
             // 2. Transmit strict parameters to live Gemini AI Backend
-            const aiResponse = await fetch('/api/agent/analyze-environment', {
+            const aiResponse = await fetch(apiUrl('/api/agent/analyze-environment'), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ region: region.name, pastAvgTemp, humidity })

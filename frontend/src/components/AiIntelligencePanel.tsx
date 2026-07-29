@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Bot, Sparkles, Send, CheckCircle2, AlertTriangle, ShieldAlert, ArrowRight, Loader2, Lightbulb } from 'lucide-react';
 import { useCityStore } from '../store/useCityStore';
+import { apiUrl } from '../lib/api';
 import { AiAnalysisResponse } from '../types';
 import { useAiProvider } from '../hooks/useAiProvider';
 
@@ -27,7 +28,7 @@ export const AiIntelligencePanel: React.FC = () => {
 
     setIsAiThinking(true);
     try {
-      const res = await fetch('/api/ai/analyze', {
+      const res = await fetch(apiUrl('/api/ai/analyze'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
