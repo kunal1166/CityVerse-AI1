@@ -61,8 +61,10 @@ export interface EnvMetric {
   floodRiskLevel: 'Low' | 'Moderate' | 'High' | 'Critical';
   aqiBreakdown: AQIBreakdown;
   windSpeed: number; // km/h
-  windDirection: string;
-  /** Present only when live weather succeeded. */
+  windDirection: number; // compass degrees, 0-360
+  windDirectionCardinal?: string; // e.g. "NE"
+  condition?: string; // e.g. "Partly Cloudy"
+  canalCapacityThreshold?: string; // e.g. "62% Full"
   forecast?: ForecastHour[];
 }
 

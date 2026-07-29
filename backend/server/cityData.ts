@@ -77,7 +77,8 @@ export function getCityDashboardData(cityId: CityId = 'taipei'): CityDashboardDa
         floodRiskLevel: 'Low' as const,
         aqiBreakdown: { pm25: 3.7, pm10: 14.9, no2: 4.7, so2: 0.9, co: 0.2, o3: 14 },
         windSpeed: 16.5,
-        windDirection: 'ESE',
+        windDirection: 112.5,
+        windDirectionCardinal: 'ESE',
       },
       sensors: [
         { id: 'SEN-TP-01', cityId: 'taipei' as CityId, name: 'Keelung River Water Level Node', type: 'flood_stage' as const, coordinates: [25.0710, 121.5580] as [number, number], value: 0.45, unit: 'm', status: 'normal' as const, lastUpdated: '3 mins ago', district: 'Songshan' },

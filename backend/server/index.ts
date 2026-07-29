@@ -27,10 +27,10 @@ app.use(express.json());
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 // Helper function to dynamically evaluate Flood Risk Level based on live rainfall
-function calculateFloodRisk(rainRate: number): string {
-  if (rainRate > 25) return 'Critical Stage 3';
-  if (rainRate > 10) return 'Moderate Stage 2';
-  if (rainRate > 2) return 'Watch Stage 1';
+function calculateFloodRisk(rainRate: number): 'Low' | 'Moderate' | 'High' | 'Critical' {
+  if (rainRate > 25) return 'Critical';
+  if (rainRate > 10) return 'High';
+  if (rainRate > 2) return 'Moderate';
   return 'Low';
 }
 
