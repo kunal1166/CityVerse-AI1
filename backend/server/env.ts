@@ -13,11 +13,16 @@
 import dotenv from 'dotenv';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 // Resolve relative to this file, so it works no matter which directory
 // `npm run dev` was launched from.
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+//
+// We deliberately use __dirname instead of import.meta.url here: this file
+// runs both as an ES module (via tsx in dev) and bundled to CJS (via esbuild
+// for production, see package.json's "build" script). esbuild's CJS output
+// format leaves import.meta.url undefined, which crashes fileURLToPath() at
+// startup. __dirname works correctly in both cases.
+const root = path.resolve(__dirname, '..');
 
 // Highest priority first. Values already set win, so .env.local overrides .env.
 for (const file of ['.env.local', '.env']) {
