@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { useCityStore, CITIES_CONFIG } from '../store/useCityStore';
 import { useThemeStore } from '../store/useThemeStore';
-import { Layers, Navigation, Eye, EyeOff } from 'lucide-react';
+import { Layers, Navigation, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
 
 const TILE_URLS = {
   light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
@@ -36,6 +36,8 @@ export const InteractiveMap: React.FC = () => {
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layersGroupRef = useRef<L.LayerGroup | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
+
+  const [isControlsExpanded, setIsControlsExpanded] = useState(false);
 
   // Safe fallback to Taipei cityConfig to prevent undefined errors
   const cityConfig = CITIES_CONFIG?.[selectedCity] || CITIES_CONFIG?.taipei || {
@@ -75,6 +77,23 @@ export const InteractiveMap: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCity, cityConfig]);
+
+  // Handle ResizeObserver to automatically call map.invalidateSize() when containers resize
+  useEffect(() => {
+    if (!mapContainerRef.current || !mapInstanceRef.current) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    });
+
+    resizeObserver.observe(mapContainerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   // Swap the basemap tiles when the app theme changes, instead of rebuilding the map.
   useEffect(() => {
@@ -190,9 +209,6 @@ export const InteractiveMap: React.FC = () => {
 
         const marker = L.marker([coords[0], coords[1]], { icon: customIcon });
 
-        // Colors here are set via the cv-leaflet-popup class in index.css
-        // (which responds to the .dark theme class) rather than inline,
-        // so the popup no longer shows dark text on a dark background.
         const popupContent = `
           <div class="cv-leaflet-popup">
             <div class="cv-leaflet-popup-kicker" style="color: ${color};">
@@ -261,22 +277,29 @@ export const InteractiveMap: React.FC = () => {
       <div ref={mapContainerRef} className="w-full h-full z-0" />
 
       {/* Map Control Bar Overlay (Top Left) */}
-      <div className="absolute top-3 left-3 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs p-2 rounded-md border border-gray-200 dark:border-slate-700 shadow-md text-xs space-y-2">
-        <div className="flex items-center justify-between pb-1.5 border-b border-gray-100 dark:border-slate-700 font-semibold text-gray-800 dark:text-slate-100 text-[11px]">
-          <span className="flex items-center gap-1.5">
-            <Layers className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Map Intelligence Layers
-          </span>
+      <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs p-2 rounded-md border border-gray-200 dark:border-slate-700 shadow-md text-xs space-y-2 max-w-[200px] sm:max-w-xs">
+        <div className="flex items-center justify-between gap-1 pb-1.5 border-b border-gray-100 dark:border-slate-700 font-semibold text-gray-800 dark:text-slate-100 text-[11px]">
+          <button
+            onClick={() => setIsControlsExpanded(!isControlsExpanded)}
+            className="flex items-center gap-1.5 text-left font-bold sm:cursor-default"
+          >
+            <Layers className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+            <span className="truncate">Map Layers</span>
+            <span className="sm:hidden text-gray-400 dark:text-slate-500">
+              {isControlsExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </span>
+          </button>
           <button
             onClick={resetView}
             title="Recenter City Map"
-            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium flex items-center gap-1 text-[10px]"
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium flex items-center gap-0.5 text-[10px] shrink-0"
           >
             <Navigation className="w-3 h-3" /> Recenter
           </button>
         </div>
 
-        {/* Toggle Tills */}
-        <div className="grid grid-cols-2 gap-1.5">
+        {/* Toggle Pills Grid (Collapsible on Mobile, Expanded on Desktop) */}
+        <div className={`${isControlsExpanded ? 'grid' : 'hidden sm:grid'} grid-cols-2 gap-1.5 max-h-[160px] sm:max-h-none overflow-y-auto`}>
           {(Object.keys(mapLayers) as Array<keyof typeof mapLayers>).map((layerKey) => {
             const isEnabled = mapLayers[layerKey];
             return (
@@ -289,8 +312,8 @@ export const InteractiveMap: React.FC = () => {
                     : 'bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-700'
                 }`}
               >
-                <span>{LAYER_LABELS[layerKey] ?? layerKey}</span>
-                {isEnabled ? <Eye className="w-3 h-3 text-blue-600 dark:text-blue-400 ml-1" /> : <EyeOff className="w-3 h-3 text-gray-400 dark:text-slate-500 ml-1" />}
+                <span className="truncate">{LAYER_LABELS[layerKey] ?? layerKey}</span>
+                {isEnabled ? <Eye className="w-3 h-3 text-blue-600 dark:text-blue-400 ml-1 shrink-0" /> : <EyeOff className="w-3 h-3 text-gray-400 dark:text-slate-500 ml-1 shrink-0" />}
               </button>
             );
           })}
@@ -298,20 +321,20 @@ export const InteractiveMap: React.FC = () => {
       </div>
 
       {/* Map Legend Overlay (Bottom Left) */}
-      <div className="absolute bottom-3 left-3 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs px-2.5 py-2 rounded-md border border-gray-200 dark:border-slate-700 shadow-sm text-[10px] space-y-1">
+      <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-md border border-gray-200 dark:border-slate-700 shadow-sm text-[10px] space-y-1">
         <div className="font-semibold text-gray-700 dark:text-slate-200 text-[10px]">Map Legend</div>
-        <div className="flex items-center space-x-3 text-gray-600 dark:text-slate-300">
+        <div className="flex items-center space-x-2 sm:space-x-3 text-gray-600 dark:text-slate-300">
           <div className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
-            <span>Normal</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 dark:bg-emerald-400 shrink-0" />
+            <span className="text-[9px] sm:text-[10px]">Normal</span>
           </div>
           <div className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-600 dark:bg-amber-400" />
-            <span>Moderate</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-600 dark:bg-amber-400 shrink-0" />
+            <span className="text-[9px] sm:text-[10px]">Moderate</span>
           </div>
           <div className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-600 dark:bg-red-400" />
-            <span>Critical Incident</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-red-600 dark:bg-red-400 shrink-0" />
+            <span className="text-[9px] sm:text-[10px]">Critical</span>
           </div>
         </div>
       </div>

@@ -66,58 +66,58 @@ Urban arterial corridors are currently operating under ${
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-md border border-gray-200 shadow-2xl max-w-2xl w-full flex flex-col text-xs max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-800 shadow-2xl max-w-2xl w-full flex flex-col text-xs max-h-[92vh] overflow-hidden text-gray-900 dark:text-slate-100">
         
         {/* Modal Header */}
-        <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
-          <div className="flex items-center space-x-2">
-            <Bus className="w-5 h-5 text-blue-400" />
-            <div>
-              <div className="font-bold text-sm">National Traffic Operations Executive Briefing</div>
-              <div className="text-[10px] text-slate-400 font-mono">Taipei City Traffic & Smart City Command Format</div>
+        <div className="px-3.5 sm:px-4 py-3 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
+          <div className="flex items-center space-x-2 min-w-0">
+            <Bus className="w-5 h-5 text-blue-400 shrink-0" />
+            <div className="min-w-0">
+              <div className="font-bold text-xs sm:text-sm truncate">National Traffic Operations Executive Briefing</div>
+              <div className="text-[10px] text-slate-400 font-mono truncate">Taipei City Traffic & Smart City Command Format</div>
             </div>
           </div>
 
-          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors shrink-0 ml-2">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Body Preview */}
-        <div className="p-4 overflow-y-auto space-y-4">
+        <div className="p-3.5 sm:p-4 overflow-y-auto space-y-4">
           
           {/* Printable Report Header Block */}
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-md space-y-3 font-sans">
-            <div className="flex items-center justify-between border-b border-gray-200 pb-2">
-              <div className="flex items-center space-x-2">
-                <Shield className="w-5 h-5 text-blue-700" />
-                <span className="font-bold text-gray-900 text-sm">{cityName} Land Transport Operations Center</span>
+          <div className="p-3 sm:p-4 bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700/60 rounded-md space-y-3 font-sans">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-gray-200 dark:border-slate-700 pb-2 gap-1">
+              <div className="flex items-center space-x-2 min-w-0">
+                <Shield className="w-5 h-5 text-blue-700 dark:text-blue-400 shrink-0" />
+                <span className="font-bold text-gray-900 dark:text-slate-100 text-xs sm:text-sm truncate">{cityName} Land Transport Operations Center</span>
               </div>
-              <span className="text-[10px] text-gray-500 font-mono">{new Date().toLocaleDateString()}</span>
+              <span className="text-[10px] text-gray-500 dark:text-slate-400 font-mono shrink-0">{new Date().toLocaleDateString()}</span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
-              <div className="bg-white p-2 rounded border border-gray-200">
-                <div className="text-[10px] text-gray-500 font-semibold">Congestion Index</div>
-                <div className="font-bold text-gray-900 mt-0.5">{traffic.congestionIndex}%</div>
+              <div className="bg-white dark:bg-slate-800 p-2 rounded border border-gray-200 dark:border-slate-700">
+                <div className="text-[10px] text-gray-500 dark:text-slate-400 font-semibold truncate">Congestion Index</div>
+                <div className="font-bold text-gray-900 dark:text-slate-100 mt-0.5">{traffic.congestionIndex}%</div>
               </div>
-              <div className="bg-white p-2 rounded border border-gray-200">
-                <div className="text-[10px] text-gray-500 font-semibold">Avg Speed</div>
-                <div className="font-bold text-gray-900 mt-0.5">{traffic.avgSpeed} km/h</div>
+              <div className="bg-white dark:bg-slate-800 p-2 rounded border border-gray-200 dark:border-slate-700">
+                <div className="text-[10px] text-gray-500 dark:text-slate-400 font-semibold truncate">Avg Speed</div>
+                <div className="font-bold text-gray-900 dark:text-slate-100 mt-0.5">{traffic.avgSpeed} km/h</div>
               </div>
-              <div className="bg-white p-2 rounded border border-gray-200">
-                <div className="text-[10px] text-gray-500 font-semibold">Vehicle Volume</div>
-                <div className="font-bold text-gray-900 mt-0.5">{traffic.vehicleCount.toLocaleString()}</div>
+              <div className="bg-white dark:bg-slate-800 p-2 rounded border border-gray-200 dark:border-slate-700">
+                <div className="text-[10px] text-gray-500 dark:text-slate-400 font-semibold truncate">Vehicle Volume</div>
+                <div className="font-bold text-gray-900 dark:text-slate-100 mt-0.5">{traffic.vehicleCount.toLocaleString()}</div>
               </div>
-              <div className="bg-white p-2 rounded border border-gray-200">
-                <div className="text-[10px] text-gray-500 font-semibold">Transit On-Time</div>
-                <div className="font-bold text-emerald-700 mt-0.5">{traffic.publicTransitOnTime}%</div>
+              <div className="bg-white dark:bg-slate-800 p-2 rounded border border-gray-200 dark:border-slate-700">
+                <div className="text-[10px] text-gray-500 dark:text-slate-400 font-semibold truncate">Transit On-Time</div>
+                <div className="font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">{traffic.publicTransitOnTime}%</div>
               </div>
             </div>
 
-            <div className="bg-white p-3 rounded border border-gray-200 text-gray-800 text-[11px] leading-relaxed">
-              <div className="font-bold text-gray-900 mb-1">AI Executive Summary:</div>
+            <div className="bg-white dark:bg-slate-800 p-3 rounded border border-gray-200 dark:border-slate-700 text-gray-800 dark:text-slate-200 text-[11px] leading-relaxed">
+              <div className="font-bold text-gray-900 dark:text-slate-100 mb-1">AI Executive Summary:</div>
               {summaryText.split('EXECUTIVE SUMMARY:')[1]}
             </div>
           </div>
@@ -125,21 +125,21 @@ Urban arterial corridors are currently operating under ${
         </div>
 
         {/* Modal Actions Footer */}
-        <div className="p-3 bg-gray-50 border-t border-gray-200 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center space-x-2">
+        <div className="p-3 bg-gray-50 dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <button
               onClick={copySummary}
-              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded flex items-center gap-1.5 transition-colors border border-gray-300"
+              className="px-3 py-1.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-800 dark:text-slate-200 font-bold rounded flex items-center justify-center gap-1.5 transition-colors border border-gray-300 dark:border-slate-700 text-[11px]"
             >
-              {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
               <span>{copied ? 'Copied Summary' : 'Copy AI Briefing'}</span>
             </button>
 
             <button
               onClick={downloadCSV}
-              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded flex items-center gap-1.5 transition-colors border border-gray-300"
+              className="px-3 py-1.5 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-800 dark:text-slate-200 font-bold rounded flex items-center justify-center gap-1.5 transition-colors border border-gray-300 dark:border-slate-700 text-[11px]"
             >
-              <Download className="w-3.5 h-3.5 text-blue-600" />
+              <Download className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
               <span>Export CSV</span>
             </button>
           </div>
@@ -147,9 +147,9 @@ Urban arterial corridors are currently operating under ${
           <div className="flex items-center space-x-2">
             <button
               onClick={handlePrint}
-              className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded flex items-center gap-1.5 transition-colors shadow-2xs"
+              className="w-full sm:w-auto px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded flex items-center justify-center gap-1.5 transition-colors shadow-2xs text-[11px]"
             >
-              <Printer className="w-3.5 h-3.5" />
+              <Printer className="w-3.5 h-3.5 shrink-0" />
               <span>Print / Download PDF</span>
             </button>
           </div>

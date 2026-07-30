@@ -63,49 +63,49 @@ export const ReportsModule: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 space-y-4 bg-[#F4F6F8] text-xs">
+    <div className="flex-1 flex flex-col h-full overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-[#F4F6F8] dark:bg-slate-950 text-gray-900 dark:text-slate-100 text-xs">
       
       {/* Header */}
-      <div className="flex items-center justify-between bg-white p-3 rounded-md border border-gray-200 shadow-2xs">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-white dark:bg-slate-900 p-3 rounded-md border border-gray-200 dark:border-slate-800 shadow-2xs">
         <div>
-          <h2 className="font-bold text-gray-900 text-sm flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-600" /> Executive Operations Reporting & Data Export System
+          <h2 className="font-bold text-gray-900 dark:text-slate-100 text-xs sm:text-sm flex items-center gap-2">
+            <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400 shrink-0" /> Executive Operations Reporting & Data Export System
           </h2>
-          <p className="text-[11px] text-gray-500">
+          <p className="text-[10px] sm:text-[11px] text-gray-500 dark:text-slate-400">
             Generate official government briefings, AI-curated incident audits, PDF downloads, and raw telemetry CSV files.
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <span className="px-2.5 py-1 bg-gray-100 text-gray-700 font-semibold rounded text-[10px] border border-gray-200">
+        <div className="flex items-center space-x-2 shrink-0">
+          <span className="px-2.5 py-1 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 font-semibold rounded text-[10px] border border-gray-200 dark:border-slate-700">
             CLASSIFICATION: OFFICIAL USE ONLY
           </span>
         </div>
       </div>
 
       {/* Main Grid: Custom Report Generator & Generated Preview */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
         
         {/* Generator Form */}
-        <div className="bg-white p-4 rounded-md border border-gray-200 shadow-2xs space-y-3.5 flex flex-col justify-between">
+        <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-md border border-gray-200 dark:border-slate-800 shadow-2xs space-y-3.5 flex flex-col justify-between">
           <div className="space-y-3">
-            <div className="font-bold text-gray-900 text-xs pb-2 border-b border-gray-100">
+            <div className="font-bold text-gray-900 dark:text-slate-100 text-xs pb-2 border-b border-gray-100 dark:border-slate-800">
               Configure Report Generation Parameters
             </div>
 
             <div className="space-y-1">
-              <label className="block text-[10px] font-semibold text-gray-600">Operating City Jurisdiction</label>
-              <div className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded font-bold text-gray-900">
+              <label className="block text-[10px] font-semibold text-gray-600 dark:text-slate-400">Operating City Jurisdiction</label>
+              <div className="px-3 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded font-bold text-gray-900 dark:text-slate-100">
                 {cityName} Command Center
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="block text-[10px] font-semibold text-gray-600">Report Framework Type</label>
+              <label className="block text-[10px] font-semibold text-gray-600 dark:text-slate-400">Report Framework Type</label>
               <select
                 value={reportType}
                 onChange={(e) => setReportType(e.target.value as any)}
-                className="w-full bg-white border border-gray-300 rounded px-2.5 py-1.5 text-xs text-gray-800"
+                className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-xs text-gray-800 dark:text-slate-100"
               >
                 <option value="daily">Daily Command Center Operations Audit</option>
                 <option value="weekly">Weekly Urban Mobility & Environmental Health Review</option>
@@ -119,19 +119,19 @@ export const ReportsModule: React.FC = () => {
                 id="aiOpt"
                 checked={includeAiExecutiveSummary}
                 onChange={(e) => setIncludeAiExecutiveSummary(e.target.checked)}
-                className="rounded text-blue-600 focus:ring-blue-500"
+                className="rounded text-blue-600 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700"
               />
-              <label htmlFor="aiOpt" className="text-gray-700 font-semibold text-[11px] cursor-pointer">
+              <label htmlFor="aiOpt" className="text-gray-700 dark:text-slate-300 font-semibold text-[11px] cursor-pointer">
                 Include AI Executive Briefing
               </label>
             </div>
           </div>
 
-          <div className="space-y-2 pt-2 border-t border-gray-100">
+          <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-slate-800">
             <button
               onClick={generateReport}
               disabled={isAiThinking}
-              className="w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-bold rounded flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+              className="w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-slate-800 text-white font-bold rounded flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
             >
               {isAiThinking ? (
                 <>
@@ -146,27 +146,27 @@ export const ReportsModule: React.FC = () => {
 
             <button
               onClick={handleExportCsv}
-              className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded border border-gray-300 flex items-center justify-center gap-1.5 transition-colors"
+              className="w-full py-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-800 dark:text-slate-200 font-semibold rounded border border-gray-300 dark:border-slate-700 flex items-center justify-center gap-1.5 transition-colors"
             >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> Export Raw Telemetry CSV
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Export Raw Telemetry CSV
             </button>
           </div>
         </div>
 
         {/* Report Preview Document */}
-        <div className="lg:col-span-2 bg-white rounded-md border border-gray-200 p-4 space-y-3 shadow-2xs flex flex-col justify-between">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-800 p-3.5 sm:p-4 space-y-3 shadow-2xs flex flex-col justify-between">
           <div>
             {/* Header Document Seal */}
-            <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-gray-200 dark:border-slate-800 gap-2">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gray-900 rounded flex items-center justify-center text-white font-extrabold text-sm shadow-xs">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gray-900 dark:bg-slate-800 rounded flex items-center justify-center text-white font-extrabold text-xs sm:text-sm shadow-xs border border-gray-800 dark:border-slate-700">
                   GOV
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 text-sm">
+                  <h3 className="font-bold text-gray-900 dark:text-slate-100 text-xs sm:text-sm">
                     {cityName.toUpperCase()} SMART CITY COMMAND BRIEFING
                   </h3>
-                  <p className="text-[10px] text-gray-500">
+                  <p className="text-[10px] text-gray-500 dark:text-slate-400">
                     Generated: {new Date().toLocaleDateString('en-US', { dateStyle: 'full' })} • Security Tier L4
                   </p>
                 </div>
@@ -175,7 +175,7 @@ export const ReportsModule: React.FC = () => {
               {reportGenerated && (
                 <button
                   onClick={() => window.print()}
-                  className="px-3 py-1.5 bg-gray-800 hover:bg-black text-white font-semibold rounded flex items-center gap-1 transition-colors"
+                  className="w-full sm:w-auto px-3 py-1.5 bg-gray-800 dark:bg-slate-800 hover:bg-black dark:hover:bg-slate-700 text-white font-semibold rounded flex items-center justify-center gap-1 transition-colors"
                 >
                   <Printer className="w-3.5 h-3.5" /> Print / Save PDF
                 </button>
@@ -185,43 +185,43 @@ export const ReportsModule: React.FC = () => {
             {/* Document Body */}
             {reportGenerated ? (
               <div className="pt-3 space-y-3">
-                <div className="bg-blue-50/70 border border-blue-200 rounded p-3 space-y-1">
-                  <div className="font-bold text-blue-900 text-xs flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-blue-600" /> Executive AI Operational Summary
+                <div className="bg-blue-50/70 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded p-3 space-y-1">
+                  <div className="font-bold text-blue-900 dark:text-blue-300 text-xs flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Executive AI Operational Summary
                   </div>
-                  <p className="text-[11px] text-gray-800 leading-relaxed font-serif">
+                  <p className="text-[11px] text-gray-800 dark:text-slate-200 leading-relaxed font-serif">
                     {reportContent}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 pt-1">
-                  <div className="bg-gray-50 p-2.5 rounded border border-gray-200 space-y-1">
-                    <div className="font-bold text-gray-900 text-xs">Transportation Metrics</div>
-                    <div className="text-[10px] text-gray-600">Congestion Index: {dashboardData?.traffic.congestionIndex}%</div>
-                    <div className="text-[10px] text-gray-600">Arterial Speed Avg: {dashboardData?.traffic.avgSpeed} km/h</div>
-                    <div className="text-[10px] text-gray-600">Transit On-Time: {dashboardData?.traffic.publicTransitOnTime}%</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div className="bg-gray-50 dark:bg-slate-800/60 p-2.5 rounded border border-gray-200 dark:border-slate-700/60 space-y-1">
+                    <div className="font-bold text-gray-900 dark:text-slate-100 text-xs">Transportation Metrics</div>
+                    <div className="text-[10px] text-gray-600 dark:text-slate-300">Congestion Index: {dashboardData?.traffic.congestionIndex}%</div>
+                    <div className="text-[10px] text-gray-600 dark:text-slate-300">Arterial Speed Avg: {dashboardData?.traffic.avgSpeed} km/h</div>
+                    <div className="text-[10px] text-gray-600 dark:text-slate-300">Transit On-Time: {dashboardData?.traffic.publicTransitOnTime}%</div>
                   </div>
 
-                  <div className="bg-gray-50 p-2.5 rounded border border-gray-200 space-y-1">
-                    <div className="font-bold text-gray-900 text-xs">Environmental Metrics</div>
-                    <div className="text-[10px] text-gray-600">Air Quality Index: {dashboardData?.environment.aqi}</div>
-                    <div className="text-[10px] text-gray-600">Precipitation Rate: {dashboardData?.environment.rainfallRate} mm/h</div>
-                    <div className="text-[10px] text-gray-600">Flood Risk Stage: {dashboardData?.environment.floodRiskLevel}</div>
+                  <div className="bg-gray-50 dark:bg-slate-800/60 p-2.5 rounded border border-gray-200 dark:border-slate-700/60 space-y-1">
+                    <div className="font-bold text-gray-900 dark:text-slate-100 text-xs">Environmental Metrics</div>
+                    <div className="text-[10px] text-gray-600 dark:text-slate-300">Air Quality Index: {dashboardData?.environment.aqi}</div>
+                    <div className="text-[10px] text-gray-600 dark:text-slate-300">Precipitation Rate: {dashboardData?.environment.rainfallRate} mm/h</div>
+                    <div className="text-[10px] text-gray-600 dark:text-slate-300">Flood Risk Stage: {dashboardData?.environment.floodRiskLevel}</div>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="py-16 text-center text-gray-400 space-y-2">
-                <FileText className="w-10 h-10 mx-auto text-gray-300" />
-                <div className="font-semibold text-gray-600">No Report Currently Compiled</div>
-                <p className="text-[11px] text-gray-400 max-w-xs mx-auto">
+              <div className="py-12 sm:py-16 text-center text-gray-400 dark:text-slate-500 space-y-2">
+                <FileText className="w-8 h-8 sm:w-10 sm:h-10 mx-auto text-gray-300 dark:text-slate-600" />
+                <div className="font-semibold text-gray-600 dark:text-slate-400">No Report Currently Compiled</div>
+                <p className="text-[10px] sm:text-[11px] text-gray-400 dark:text-slate-500 max-w-xs mx-auto">
                   Select your parameters on the left and click "Compile Official Report" to generate.
                 </p>
               </div>
             )}
           </div>
 
-          <div className="text-[9px] text-gray-400 border-t border-gray-100 pt-2 flex justify-between">
+          <div className="text-[9px] text-gray-400 dark:text-slate-500 border-t border-gray-100 dark:border-slate-800 pt-2 flex flex-col sm:flex-row justify-between gap-1">
             <span>CityVerse AI • Official Operations Platform</span>
             <span>Document Checksum: SHA-256 Verified</span>
           </div>

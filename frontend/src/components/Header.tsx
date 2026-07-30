@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, Search, AlertTriangle, ChevronDown, Clock, RefreshCw } from 'lucide-react';
+import { Menu, AlertTriangle, ChevronDown, Clock, RefreshCw } from 'lucide-react';
 import { useCityStore, CITIES_CONFIG } from '../store/useCityStore';
 import { CityId } from '../types';
 import { CityVerseLogo } from './CityVerseLogo';
@@ -13,8 +13,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { 
     selectedCity, 
     setSelectedCity, 
-    searchQuery, 
-    setSearchQuery, 
     emergencyMode, 
     setEmergencyMode, 
     fetchDashboardData, 
@@ -37,42 +35,42 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const currentCityConfig = CITIES_CONFIG[selectedCity];
 
   return (
-    <header className="h-14 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 flex items-center justify-between text-xs select-none sticky top-0 z-30 shadow-xs">
-      {/* Left: Sidebar Toggle, Brand & City Selector */}
-      <div className="flex items-center space-x-3">
+    <header className="h-14 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-3 sm:px-4 flex items-center justify-between text-xs select-none sticky top-0 z-30 shadow-xs relative w-full shrink-0">
+      {/* Left Group: Sidebar Toggle & Brand Logo */}
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {onToggleSidebar && (
           <button
             onClick={onToggleSidebar}
-            className="p-1.5 rounded-md bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-slate-200 transition-colors"
+            className="p-1.5 rounded-md bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-slate-200 transition-colors shrink-0"
             title="Toggle Sidebar"
           >
             <Menu className="w-4 h-4" />
           </button>
         )}
 
-        {/* Logo */}
-        <div className="flex items-center space-x-2">
-          <CityVerseLogo height={32} />
+        {/* Brand Logo */}
+        <div className="flex items-center shrink-0">
+          <CityVerseLogo height={28} />
         </div>
 
-        <div className="h-6 w-px bg-gray-200 dark:bg-slate-700 mx-1" />
+        <div className="hidden sm:block h-5 w-px bg-gray-200 dark:bg-slate-700 shrink-0 mx-1" />
 
-        {/* City Selector Dropdown */}
-        <div className="relative">
+        {/* City Selector Dropdown (Hidden on Mobile, Visible on Desktop) */}
+        <div className="hidden sm:block relative shrink-0">
           <button
             onClick={() => setCityDropdownOpen(!cityDropdownOpen)}
-            className="flex items-center space-x-2 px-2.5 py-1.5 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-md font-medium text-gray-800 dark:text-slate-100 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-md font-medium text-gray-800 dark:text-slate-100 transition-colors"
           >
             <span className="text-sm">{currentCityConfig.flag}</span>
-            <span className="font-semibold">{currentCityConfig.name}</span>
-            <span className="text-gray-400 dark:text-slate-500 text-[10px]">({currentCityConfig.country})</span>
-            <ChevronDown className="w-3.5 h-3.5 text-gray-500 dark:text-slate-400 ml-1" />
+            <span className="font-semibold text-xs">{currentCityConfig.name}</span>
+            <span className="hidden md:inline text-gray-400 dark:text-slate-500 text-[10px]">({currentCityConfig.country})</span>
+            <ChevronDown className="w-3.5 h-3.5 text-gray-500 dark:text-slate-400 shrink-0" />
           </button>
 
           {cityDropdownOpen && (
             <div className="absolute left-0 mt-1 w-60 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-md shadow-lg py-1 z-50">
               <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider border-b border-gray-100 dark:border-slate-700">
-                Select Operating Jurisdiction
+                Select Jurisdiction
               </div>
               {(Object.keys(CITIES_CONFIG) as CityId[]).map((cId) => {
                 const c = CITIES_CONFIG[cId];
@@ -88,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                       isSelected ? 'bg-blue-50/70 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 font-semibold' : 'text-gray-700 dark:text-slate-200'
                     }`}
                   >
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <span className="text-base">{c.flag}</span>
                       <div>
                         <div className="text-xs font-medium">{c.name}</div>
@@ -108,56 +106,34 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           onClick={() => fetchDashboardData()}
           disabled={isLoading}
           title="Refresh live city telemetry"
-          className="p-1.5 text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-md transition-colors"
+          className="hidden sm:block p-1.5 text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-md transition-colors shrink-0"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-blue-600 dark:text-blue-400' : ''}`} />
         </button>
       </div>
 
-      {/* Center: Global Search Bar */}
-      <div className="flex-1 max-w-md mx-6">
-        <div className="relative">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={`Search incidents, districts, or sensors in ${currentCityConfig.name}...`}
-            className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 text-gray-900 dark:text-slate-100 text-xs rounded-md pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-900 placeholder-gray-400 dark:placeholder-slate-500 transition-all"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 text-xs font-semibold"
-            >
-              ×
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Right: Theme Toggle, Emergency Mode & Clock */}
-      <div className="flex items-center space-x-3">
+      {/* Right Group: Action Controls */}
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         <ThemeToggle />
 
-        <div className="h-5 w-px bg-gray-200 dark:bg-slate-700" />
-
+        {/* Emergency Protocol Button */}
         <button
           onClick={() => setEmergencyMode(!emergencyMode)}
-          className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md font-semibold text-xs border transition-colors ${
+          className={`flex items-center justify-center p-1.5 sm:px-2.5 sm:py-1.5 rounded-md font-semibold text-xs border transition-colors shrink-0 ${
             emergencyMode
-              ? 'bg-red-600 text-white border-red-700 animate-pulse shadow-sm'
+              ? 'bg-red-600 text-white border-red-700 animate-pulse shadow-xs'
               : 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/30 hover:bg-red-100 dark:hover:bg-red-500/20'
           }`}
           title="Toggle Command Center Emergency Protocol"
         >
-          <AlertTriangle className="w-3.5 h-3.5" />
-          <span>{emergencyMode ? 'EMERGENCY ACTIVE' : 'EMERGENCY PROTOCOL'}</span>
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+          <span className="hidden md:inline ml-1.5">{emergencyMode ? 'EMERGENCY ACTIVE' : 'EMERGENCY PROTOCOL'}</span>
         </button>
 
-        <div className="h-5 w-px bg-gray-200 dark:bg-slate-700" />
+        <div className="hidden xl:block h-5 w-px bg-gray-200 dark:bg-slate-700 shrink-0" />
 
-        <div className="flex items-center space-x-1.5 text-gray-600 dark:text-slate-300 font-mono bg-gray-50 dark:bg-slate-800 px-2 py-1 rounded border border-gray-200 dark:border-slate-600">
+        {/* Live Clock (Desktop Only) */}
+        <div className="hidden xl:flex items-center gap-1.5 text-gray-600 dark:text-slate-300 font-mono bg-gray-50 dark:bg-slate-800 px-2 py-1 rounded border border-gray-200 dark:border-slate-600 shrink-0">
           <Clock className="w-3.5 h-3.5 text-gray-500 dark:text-slate-400" />
           <span className="font-semibold text-gray-800 dark:text-slate-100 text-xs">{time}</span>
           <span className="text-[10px] text-gray-400 dark:text-slate-500">UTC+8</span>
