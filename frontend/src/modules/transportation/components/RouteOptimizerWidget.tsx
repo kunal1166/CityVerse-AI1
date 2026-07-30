@@ -1,8 +1,46 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Navigation, Clock, ShieldCheck, Zap, Bus, ArrowRight, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 interface RouteOptimizerWidgetProps {
   cityName: string;
+}
+
+// Real Taipei corridors used to build plausible-looking routes. Swapped in
+// deterministically based on the origin/destination text so the same pair
+// always produces the same route, but different pairs produce different
+// routes — this is not a real routing engine (no geocoding, no actual road
+// network pathfinding), just enough variation that the widget responds to
+// what you type instead of always showing one fixed result.
+const MAIN_CORRIDORS = [
+  'Huanhe Expressway & Jianguo Elevated Rd',
+  'Zhongxiao E. Rd & Dunhua N. Rd',
+  'Xinsheng Overpass & Civic Blvd',
+  'Bade Rd & Songshan Rd',
+  'Keelung Rd & Xinyi Rd',
+];
+
+const BYPASS_CORRIDORS = [
+  { name: 'Huanhe Expressway via Zhongshan Bridge', avoids: 'Jianguo Elevated Rd bottleneck near Guting' },
+  { name: 'Civic Blvd via Fuxing Bridge', avoids: 'Zhongxiao E. Rd congestion near Dunhua' },
+  { name: 'Keelung Rd via Taipei 101 underpass', avoids: 'Xinyi Rd gridlock near City Hall' },
+  { name: 'Bade Rd via Songshan flyover', avoids: 'Nanjing E. Rd slowdown near Zhongshan' },
+];
+
+const TRANSIT_ROUTES = [
+  'MRT Red Line + Bus 222',
+  'MRT Blue Line (Bannan) direct',
+  'MRT Brown Line + Bus 41',
+  'MRT Green Line + Bus 15',
+];
+
+/** Small deterministic string hash so the same input always produces the
+ * same "computed" route, while different input produces different results. */
+function hashString(input: string): number {
+  let hash = 0;
+  for (let i = 0; i < input.length; i++) {
+    hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
+  }
+  return hash;
 }
 
 export const RouteOptimizerWidget: React.FC<RouteOptimizerWidgetProps> = ({ cityName }) => {
@@ -10,11 +48,62 @@ export const RouteOptimizerWidget: React.FC<RouteOptimizerWidgetProps> = ({ city
   const [destination, setDestination] = useState('Xinyi Financial District');
   const [priority, setPriority] = useState<'fastest' | 'safest' | 'lowest_congestion' | 'transit'>('lowest_congestion');
   const [isCalculated, setIsCalculated] = useState(true);
+  const [lastQuery, setLastQuery] = useState({ source, destination, priority });
 
   const handleCalculate = () => {
     setIsCalculated(false);
-    setTimeout(() => setIsCalculated(true), 400);
+    setTimeout(() => {
+      setLastQuery({ source, destination, priority });
+      setIsCalculated(true);
+    }, 400);
   };
+
+  // Everything below is derived purely from lastQuery, so it only changes
+  // when Calculate is pressed (not on every keystroke), and always matches
+  // what was actually submitted.
+  const route = useMemo(() => {
+    const seed = hashString(`${lastQuery.source.trim().toLowerCase()}|${lastQuery.destination.trim().toLowerCase()}`);
+
+    const baseDistanceKm = 5 + (seed % 300) / 10; // 5.0 - 35.0 km
+    const baseSpeedKmh = 32; // rough urban average
+    let baseTimeMin = (baseDistanceKm / baseSpeedKmh) * 60;
+    let congestionPct = 12 + (seed % 60); // 12 - 71 %
+
+    // Priority objective shifts the numbers in a direction that actually
+    // matches what the button claims to optimize for.
+    if (lastQuery.priority === 'fastest') {
+      baseTimeMin *= 0.85;
+      congestionPct = Math.min(95, congestionPct + 8);
+    } else if (lastQuery.priority === 'safest') {
+      baseTimeMin *= 1.15;
+      congestionPct = Math.max(5, congestionPct - 10);
+    } else if (lastQuery.priority === 'lowest_congestion') {
+      congestionPct = Math.max(5, congestionPct - 18);
+    }
+
+    const congestionLabel = congestionPct >= 55 ? 'High' : congestionPct >= 28 ? 'Moderate' : 'Low';
+    const congestionColor =
+      congestionPct >= 55 ? 'text-red-400' : congestionPct >= 28 ? 'text-amber-400' : 'text-emerald-400';
+
+    const mainCorridor = MAIN_CORRIDORS[seed % MAIN_CORRIDORS.length];
+    const bypass = BYPASS_CORRIDORS[(seed >> 3) % BYPASS_CORRIDORS.length];
+    const transitRoute = TRANSIT_ROUTES[(seed >> 5) % TRANSIT_ROUTES.length];
+    const bypassTimeMin = Math.round(baseTimeMin + 3 + (seed % 6));
+    const bypassDistanceKm = (baseDistanceKm + 1 + (seed % 30) / 10).toFixed(1);
+
+    return {
+      viaLabel: lastQuery.priority === 'transit' ? `Via ${transitRoute}` : `Via ${mainCorridor}`,
+      timeMin: Math.round(baseTimeMin),
+      distanceKm: baseDistanceKm.toFixed(1),
+      congestionPct,
+      congestionLabel,
+      congestionColor,
+      bypassText:
+        lastQuery.priority === 'transit'
+          ? `${transitRoute} (${Math.round(baseTimeMin + 6)} mins). Fewer transfers, slightly longer walk.`
+          : `${bypass.name} (ETA: ${bypassTimeMin} mins, ${bypassDistanceKm} km). Avoids ${bypass.avoids}.`,
+    };
+  }, [lastQuery]);
 
   return (
     <div className="bg-white rounded-md border border-gray-200 p-3 space-y-3 shadow-2xs text-xs">
@@ -107,24 +196,26 @@ export const RouteOptimizerWidget: React.FC<RouteOptimizerWidgetProps> = ({ city
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Optimal Route Computed
             </span>
             <span className="text-[10px] text-slate-400 font-mono">
-              Via Huanhe Expressway & Jianguo Elevated Rd
+              {route.viaLabel}
             </span>
           </div>
 
           <div className="grid grid-cols-3 gap-2 text-[11px]">
             <div className="bg-slate-800/80 p-2 rounded border border-slate-700">
               <div className="text-[10px] text-slate-400 font-semibold">Estimated Time</div>
-              <div className="text-sm font-bold text-emerald-400 mt-0.5">22 Mins</div>
+              <div className="text-sm font-bold text-emerald-400 mt-0.5">{route.timeMin} Mins</div>
             </div>
 
             <div className="bg-slate-800/80 p-2 rounded border border-slate-700">
               <div className="text-[10px] text-slate-400 font-semibold">Distance</div>
-              <div className="text-sm font-bold text-white mt-0.5">18.4 km</div>
+              <div className="text-sm font-bold text-white mt-0.5">{route.distanceKm} km</div>
             </div>
 
             <div className="bg-slate-800/80 p-2 rounded border border-slate-700">
               <div className="text-[10px] text-slate-400 font-semibold">Congestion Risk</div>
-              <div className="text-sm font-bold text-emerald-400 mt-0.5">Low (18%)</div>
+              <div className={`text-sm font-bold mt-0.5 ${route.congestionColor}`}>
+                {route.congestionLabel} ({route.congestionPct}%)
+              </div>
             </div>
           </div>
 
@@ -133,7 +224,7 @@ export const RouteOptimizerWidget: React.FC<RouteOptimizerWidgetProps> = ({ city
               <ArrowRight className="w-3 h-3 text-blue-400" /> Recommended Alternate Bypass:
             </div>
             <p className="text-[10px] text-slate-400 leading-relaxed bg-slate-800/40 p-2 rounded border border-slate-800">
-              Huanhe Expressway via Zhongshan Bridge (ETA: 26 mins, 21.2 km). Avoids Jianguo Elevated Rd bottleneck near Guting.
+              {route.bypassText}
             </p>
           </div>
         </div>
