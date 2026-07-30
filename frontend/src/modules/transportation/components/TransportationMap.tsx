@@ -54,7 +54,7 @@ export const ROAD_TYPE_CONFIG: Record<RoadType, {
   Highway: {
     label: 'Highways & Expressways',
     shortLabel: 'Highway',
-    description: 'Multi-lane grade-separated corridors (CTE, AYE, PIE)',
+    description: 'Multi-lane grade-separated corridors (Jianguo Elevated, Huanhe Expressway)',
     color: '#EAB308',
     badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
   },
