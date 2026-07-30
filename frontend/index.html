@@ -2,14 +2,19 @@
 <html lang="en" class="h-full bg-[#F4F6F8]">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>CityVerse AI | Smart City Command Center</title>
     
     <!-- PWA Meta Tags -->
-    <link rel="icon" href="/pwa-192x192.png" />
+    <link rel="icon" type="image/png" href="/pwa-192x192.png" />
     <meta name="theme-color" content="#0F172A" />
     <meta name="description" content="Real-time urban operations command center for Taipei City." />
     <link rel="manifest" href="/manifest.json" />
+    
+    <!-- iOS / Safari PWA compatibility -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="CityVerse" />
     <link rel="apple-touch-icon" href="/pwa-192x192.png" />
 
     <!-- Inter Font -->
@@ -20,7 +25,7 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
-    <!-- Apply saved/preferred theme before first paint to avoid a light-mode flash -->
+    <!-- Apply saved/preferred theme before first paint -->
     <script>
       (function () {
         try {
@@ -35,11 +40,11 @@
   <body class="min-h-full font-['Inter',sans-serif] text-gray-900 dark:text-slate-100 bg-[#F4F6F8] dark:bg-slate-950 antialiased selection:bg-blue-600 selection:text-white transition-colors duration-300">
     <div id="root" class="min-h-full"></div>
 
-    <!-- Service Worker Registration -->
+    <!-- Universal Service Worker Registration -->
     <script>
-      if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
+      if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          navigator.serviceWorker.register('/sw.js', { scope: '/' })
             .then((reg) => console.log('[PWA] Service Worker registered:', reg.scope))
             .catch((err) => console.error('[PWA] Service Worker registration failed:', err));
         });
