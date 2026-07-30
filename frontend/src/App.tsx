@@ -52,7 +52,7 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#F4F6F8] dark:bg-slate-950 text-gray-900 dark:text-slate-100 overflow-hidden font-['Inter',sans-serif]">
+    <div className="h-screen h-[100dvh] w-screen flex flex-col bg-[#F4F6F8] dark:bg-slate-950 text-gray-900 dark:text-slate-100 overflow-hidden font-['Inter',sans-serif]">
       {/* Top Bar */}
       <Header onToggleSidebar={toggleSidebar} />
 
@@ -64,14 +64,14 @@ export default function App() {
       {error && (
         <div
           role="alert"
-          className="shrink-0 flex items-center justify-between gap-3 px-4 py-2 bg-red-50 dark:bg-red-500/10 border-b border-red-200 dark:border-red-500/30 text-[11px] text-red-800 dark:text-red-300"
+          className="shrink-0 flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-4 py-2 bg-red-50 dark:bg-red-500/10 border-b border-red-200 dark:border-red-500/30 text-[11px] text-red-800 dark:text-red-300 flex-wrap sm:flex-nowrap"
         >
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 w-full sm:w-auto">
             <AlertTriangle className="w-4 h-4 shrink-0 text-red-600 dark:text-red-400" />
             <span className="font-semibold shrink-0">Telemetry Link Issue:</span>
             <span className="truncate">{error}</span>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
             <button
               onClick={() => fetchDashboardData(selectedCity)}
               disabled={isLoading}
@@ -91,9 +91,9 @@ export default function App() {
       )}
 
       {/* Main Command Body (Sidebar + Active Workspace Module) */}
-      <div className="flex-1 flex min-h-0 overflow-hidden">
+      <div className="flex-1 flex min-h-0 overflow-hidden relative">
         <Sidebar />
-        <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        <main className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto lg:overflow-hidden relative z-0">
           {renderModule()}
         </main>
       </div>

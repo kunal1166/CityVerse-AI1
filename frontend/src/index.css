@@ -1,32 +1,48 @@
 @import "tailwindcss";
 
-/* Tailwind v4 defaults to media-query dark mode; this switches it to the
-   `.dark` class strategy so we can toggle it manually via JS/localStorage
-   instead of only following the OS setting. */
+/* Tailwind v4 dark mode class strategy */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Smooth, app-wide transition whenever the theme flips, so the switch
-   feels like a deliberate animated event rather than an instant snap. */
+/* --- Root & Smooth Scrolling Setup --- */
 html {
   color-scheme: light;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
+
 html.dark {
   color-scheme: dark;
 }
-body,
-body * {
+
+/* Base theme transitions applied to root/containers rather than universal (*) selector for mobile performance */
+body {
+  transition: background-color 300ms cubic-bezier(0.4, 0, 0.2, 1),
+              color 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-x: hidden; /* Prevent unwanted horizontal scroll on mobile */
+  -webkit-tap-highlight-color: transparent; /* Remove blue flash on mobile taps */
+}
+
+/* Helper class for card/panel components requiring explicit theme transitions */
+.theme-transition {
   transition-property: background-color, border-color, color, fill, stroke, box-shadow;
   transition-duration: 300ms;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Leaflet tiles + the map canvas shouldn't animate colors (it causes a
-   visible "wash" over map imagery on every pan/zoom repaint). */
+/* --- Leaflet Map Responsive Container Rules --- */
 .leaflet-container,
 .leaflet-container * {
-  transition: none !important;
+  transition: none !important; /* Disable animations on map tiles during theme toggle */
 }
 
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  touch-action: pan-x pan-y; /* Smooth multi-touch panning */
+}
+
+/* Glow animation utility */
 @keyframes theme-glow-pulse {
   0%, 100% { opacity: 0.55; transform: scale(1); }
   50% { opacity: 1; transform: scale(1.15); }
@@ -35,73 +51,143 @@ body * {
   animation: theme-glow-pulse 2.4s ease-in-out infinite;
 }
 
-/* --- Leaflet popup/tooltip theming ---
-   Popups and tooltips are injected as raw HTML strings via Leaflet's API,
-   outside the React tree, so they can't use Tailwind's `dark:` variant.
-   These rules restyle them directly based on the `.dark` class on <html>. */
+/* --- Leaflet Popups & Tooltips Dark Mode --- */
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
   transition: background-color 300ms ease, color 300ms ease;
 }
+
 .dark .leaflet-popup-content-wrapper,
 .dark .leaflet-popup-tip {
   background-color: #1e293b; /* slate-800 */
   color: #e2e8f0; /* slate-200 */
 }
+
 .dark .leaflet-popup-close-button {
   color: #94a3b8 !important; /* slate-400 */
-}
-
-.cv-leaflet-popup {
-  font-family: 'Inter', sans-serif;
-  padding: 4px;
-  max-width: 220px;
-}
-.cv-leaflet-popup-kicker {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-.cv-leaflet-popup-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: #111827; /* gray-900 */
-  margin-top: 2px;
-}
-.dark .cv-leaflet-popup-title {
-  color: #f1f5f9; /* slate-100 */
-}
-.cv-leaflet-popup-subtle {
-  font-size: 10px;
-  color: #6b7280; /* gray-500 */
-  margin-top: 4px;
-}
-.dark .cv-leaflet-popup-subtle {
-  color: #94a3b8; /* slate-400 */
-}
-.cv-leaflet-popup-desc {
-  font-size: 10px;
-  color: #374151; /* gray-700 */
-  margin-top: 6px;
-  border-top: 1px solid #e5e7eb; /* gray-200 */
-  padding-top: 4px;
-}
-.dark .cv-leaflet-popup-desc {
-  color: #cbd5e1; /* slate-300 */
-  border-top-color: #334155; /* slate-700 */
-}
-.cv-leaflet-popup-eta {
-  margin-top: 8px;
-  font-size: 10px;
-  font-weight: 600;
-  color: #2563eb; /* blue-600 */
-}
-.dark .cv-leaflet-popup-eta {
-  color: #60a5fa; /* blue-400 */
 }
 
 .dark .cv-leaflet-tooltip {
   background-color: #1e293b !important; /* slate-800 */
   color: #e2e8f0 !important; /* slate-200 */
   border-color: #334155 !important; /* slate-700 */
+}
+
+/* Custom Popup Content Layout */
+.cv-leaflet-popup {
+  font-family: 'Inter', sans-serif;
+  padding: 4px;
+  width: 100%;
+  max-width: 240px;
+}
+
+.cv-leaflet-popup-kicker {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cv-leaflet-popup-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827; /* gray-900 */
+  margin-top: 2px;
+  line-height: 1.25;
+}
+
+.dark .cv-leaflet-popup-title {
+  color: #f1f5f9; /* slate-100 */
+}
+
+.cv-leaflet-popup-subtle {
+  font-size: 11px;
+  color: #6b7280; /* gray-500 */
+  margin-top: 4px;
+}
+
+.dark .cv-leaflet-popup-subtle {
+  color: #94a3b8; /* slate-400 */
+}
+
+.cv-leaflet-popup-desc {
+  font-size: 11px;
+  color: #374151; /* gray-700 */
+  margin-top: 6px;
+  border-top: 1px solid #e5e7eb; /* gray-200 */
+  padding-top: 4px;
+  line-height: 1.35;
+}
+
+.dark .cv-leaflet-popup-desc {
+  color: #cbd5e1; /* slate-300 */
+  border-top-color: #334155; /* slate-700 */
+}
+
+.cv-leaflet-popup-eta {
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #2563eb; /* blue-600 */
+}
+
+.dark .cv-leaflet-popup-eta {
+  color: #60a5fa; /* blue-400 */
+}
+
+/* --- Mobile Responsive Breakpoints & Touch Target Scaling --- */
+@media (max-width: 640px) {
+  /* Smaller popup width on tablets and small screens */
+  .cv-leaflet-popup {
+    max-width: 190px;
+  }
+
+  /* Expand hitboxes for Leaflet map controls on touch devices */
+  .leaflet-touch .leaflet-bar a {
+    width: 38px;
+    height: 38px;
+    line-height: 38px;
+    font-size: 16px;
+  }
+
+  /* Safe Area Padding for mobile browsers/iOS bottom bars */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+}
+
+@media (max-width: 380px) {
+  /* Extra small screens (portrait mobile) */
+  .cv-leaflet-popup {
+    max-width: 160px;
+  }
+
+  .cv-leaflet-popup-title {
+    font-size: 12px;
+  }
+
+  .cv-leaflet-popup-desc,
+  .cv-leaflet-popup-subtle,
+  .cv-leaflet-popup-eta {
+    font-size: 10px;
+  }
+}
+
+/* --- Modern Custom Thin Scrollbars --- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5); /* gray-400 */
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(71, 85, 105, 0.5); /* slate-600 */
 }

@@ -53,12 +53,6 @@ export const Taiwan3DMap: React.FC = () => {
     if (mapContainer.current) {
       mapInstance.current = new maplibregl.Map({
         container: mapContainer.current,
-        // A raster tile source instead of a vector style.json: a vector style
-        // pulls in a style document plus separate sprite/glyph/vector-tile
-        // requests, any one of which can be blocked by an extension or
-        // network policy and leave the map blank with no console error.
-        // Raster tiles are a single, well-cached image request per tile and
-        // are far less likely to silently fail.
         style: {
           version: 8,
           sources: {
@@ -92,8 +86,6 @@ export const Taiwan3DMap: React.FC = () => {
 
       mapInstance.current.addControl(new maplibregl.NavigationControl(), 'top-right');
 
-      // Surface tile/style failures in the console instead of a silent
-      // blank map, so any remaining issue is diagnosable.
       mapInstance.current.on('error', (e: any) => {
         console.error('[Taiwan3DMap] MapLibre error:', e?.error || e);
       });
@@ -207,8 +199,8 @@ export const Taiwan3DMap: React.FC = () => {
       const statusLabel = item.actionTaken ? '🛡️ DEFENSE ACTIVE' : `${timeMode.toUpperCase()} TEMP`;
 
       el.innerHTML = `
-        <div style="background: rgba(15, 23, 42, 0.95); border: 2px solid ${borderColor}; color: white; padding: 8px 12px; border-radius: 8px; font-family: Inter, sans-serif; box-shadow: 0 10px 25px rgba(0,0,0,0.7); backdrop-filter: blur(8px); cursor: pointer;">
-          <div style="font-weight: 800; font-size: 12px; color: #60a5fa; margin-bottom: 2px;">${item.name}</div>
+        <div style="background: rgba(15, 23, 42, 0.95); border: 2px solid ${borderColor}; color: white; padding: 6px 10px; border-radius: 8px; font-family: Inter, sans-serif; box-shadow: 0 10px 25px rgba(0,0,0,0.7); backdrop-filter: blur(8px); cursor: pointer;">
+          <div style="font-weight: 800; font-size: 11px; color: #60a5fa; margin-bottom: 2px;">${item.name}</div>
           <div style="font-size: 10px; color: #cbd5e1;">${statusLabel}: <span style="color: ${item.actionTaken ? '#34d399' : '#f87171'}; font-weight: bold;">${activeTemp}°C</span></div>
         </div>
       `;
@@ -264,59 +256,59 @@ export const Taiwan3DMap: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col w-full h-full bg-[#090D16] p-4 text-white overflow-y-auto">
+    <div className="flex flex-col w-full h-full bg-[#090D16] p-2.5 sm:p-4 text-white overflow-y-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-3 pb-3 border-b border-gray-800 gap-3 shrink-0">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center gap-1.5">
-              <Globe className="w-3 h-3 animate-spin" /> Real Open-Meteo Climate Engine
+            <span className="px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center gap-1.5">
+              <Globe className="w-3 h-3 animate-spin shrink-0" /> Real Open-Meteo Climate Engine
             </span>
           </div>
-          <h2 className="text-xl font-black text-white mt-1">Whole Taiwan 3D Environment & Gemini Agent Simulator</h2>
+          <h2 className="text-lg sm:text-xl font-black text-white mt-1">Whole Taiwan 3D Environment & Gemini Agent Simulator</h2>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap w-full md:w-auto justify-between md:justify-end">
           {activeView !== 'country' && (
             <button 
               onClick={resetToCountryView}
-              className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition shadow-lg flex items-center gap-1.5"
+              className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition shadow-lg flex items-center gap-1.5"
             >
-              <Layers className="w-3.5 h-3.5" /> Reset View
+              <Layers className="w-3.5 h-3.5 shrink-0" /> Reset View
             </button>
           )}
           <button 
             onClick={() => setShowGrid(!showGrid)}
-            className="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-blue-400 border border-gray-700 rounded-lg text-xs font-bold transition shadow-lg flex items-center gap-1.5"
+            className="px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-blue-400 border border-gray-700 rounded-lg text-xs font-bold transition shadow-lg flex items-center gap-1.5"
           >
-            {showGrid ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            {showGrid ? <ChevronUp className="w-3.5 h-3.5 shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 shrink-0" />}
             {showGrid ? 'Hide Grid' : 'Show Grid'}
           </button>
-          <span className="text-[11px] text-blue-400 font-semibold animate-pulse">{statusText}</span>
+          <span className="text-[10px] sm:text-[11px] text-blue-400 font-semibold animate-pulse w-full sm:w-auto">{statusText}</span>
         </div>
       </div>
 
       {/* Timeline Switcher */}
-      <div className="bg-gray-900/90 border border-gray-800 rounded-xl p-2.5 mb-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg backdrop-blur-md">
-        <div className="flex items-center gap-2 text-xs font-bold text-blue-400">
-          <Clock className="w-3.5 h-3.5 text-blue-400 animate-pulse" />
+      <div className="bg-gray-900/90 border border-gray-800 rounded-xl p-2.5 mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3 shadow-lg backdrop-blur-md">
+        <div className="flex items-center gap-2 text-xs font-bold text-blue-400 shrink-0">
+          <Clock className="w-3.5 h-3.5 text-blue-400 animate-pulse shrink-0" />
           <span>Real Telemetry Timeline:</span>
         </div>
-        <div className="flex items-center gap-1.5 bg-gray-950 p-1 rounded-lg border border-gray-800">
+        <div className="flex items-center gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800 w-full sm:w-auto overflow-x-auto">
           <button
             onClick={() => setTimeMode('past')}
-            className={`px-3 py-1 rounded-md text-xs font-bold transition ${timeMode === 'past' ? 'bg-cyan-600 text-white shadow-md' : 'text-gray-400 hover:text-white'}`}
+            className={`flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 sm:py-1 rounded-md text-[11px] sm:text-xs font-bold transition whitespace-nowrap ${timeMode === 'past' ? 'bg-cyan-600 text-white shadow-md' : 'text-gray-400 hover:text-white'}`}
           >
             Past (7d Actual)
           </button>
           <button
             onClick={() => setTimeMode('present')}
-            className={`px-3 py-1 rounded-md text-xs font-bold transition ${timeMode === 'present' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:text-white'}`}
+            className={`flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 sm:py-1 rounded-md text-[11px] sm:text-xs font-bold transition whitespace-nowrap ${timeMode === 'present' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:text-white'}`}
           >
             Present (Live)
           </button>
           <button
             onClick={() => setTimeMode('future')}
-            className={`px-3 py-1 rounded-md text-xs font-bold transition ${timeMode === 'future' ? 'bg-red-600 text-white shadow-md' : 'text-gray-400 hover:text-white'}`}
+            className={`flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 sm:py-1 rounded-md text-[11px] sm:text-xs font-bold transition whitespace-nowrap ${timeMode === 'future' ? 'bg-red-600 text-white shadow-md' : 'text-gray-400 hover:text-white'}`}
           >
             Gemini Proj (+7d)
           </button>
@@ -324,13 +316,13 @@ export const Taiwan3DMap: React.FC = () => {
       </div>
 
       {/* 3D Map Viewport */}
-      <div className={`relative w-full rounded-xl overflow-hidden border border-gray-800 shadow-2xl transition-all duration-300 bg-black ${showGrid ? 'h-[380px] mb-4' : 'h-[calc(100vh-160px)] mb-0'}`}>
+      <div className={`relative w-full rounded-xl overflow-hidden border border-gray-800 shadow-2xl transition-all duration-300 bg-black ${showGrid ? 'h-[300px] sm:h-[380px] mb-4' : 'h-[calc(100vh-220px)] sm:h-[calc(100vh-160px)] mb-0'}`}>
         <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
       </div>
 
       {/* AI Directives Grid */}
       {showGrid && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 pb-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pb-2">
           {predictions.map((item, idx) => {
             const activeTemp = getDisplayTemp(item, timeMode);
             return (
@@ -348,15 +340,15 @@ export const Taiwan3DMap: React.FC = () => {
                     setActiveView(item.name);
                   }
                 }}
-                className={`bg-gray-900/90 border rounded-xl p-3.5 shadow-lg backdrop-blur-md flex flex-col justify-between cursor-pointer transition ${
+                className={`bg-gray-900/90 border rounded-xl p-3 sm:p-3.5 shadow-lg backdrop-blur-md flex flex-col justify-between cursor-pointer transition ${
                   item.actionTaken ? 'border-emerald-500 ring-2 ring-emerald-500/30 bg-emerald-950/10' :
                   activeView === item.name ? 'border-blue-500 ring-2 ring-blue-500/40' : 'border-gray-800 hover:border-gray-700'
                 }`}
               >
                 <div>
-                  <div className="flex justify-between items-start mb-2">
+                  <div className="flex justify-between items-start mb-2 gap-1">
                     <h4 className="text-xs font-bold text-white truncate max-w-[140px]">{item.name}</h4>
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
                       item.actionTaken ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
                       item.riskLevel.includes('Critical') ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-blue-500/20 text-blue-300'
                     }`}>
@@ -391,13 +383,13 @@ export const Taiwan3DMap: React.FC = () => {
                       triggerMitigation(idx);
                     }}
                     disabled={item.actionTaken}
-                    className={`w-full py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md ${
+                    className={`w-full py-2 sm:py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md ${
                       item.actionTaken 
                         ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 cursor-default animate-pulse' 
                         : 'bg-blue-600 hover:bg-blue-500 text-white'
                     }`}
                   >
-                    {item.actionTaken ? <ShieldCheck className="w-3.5 h-3.5" /> : <Zap className="w-3.5 h-3.5" />}
+                    {item.actionTaken ? <ShieldCheck className="w-3.5 h-3.5 shrink-0" /> : <Zap className="w-3.5 h-3.5 shrink-0" />}
                     {item.actionTaken ? 'Gemini Defense Active (-1.5°C)' : 'Trigger AI Mitigation'}
                   </button>
                 </div>

@@ -69,10 +69,10 @@ export const AgenticAnalyzer: React.FC<AgenticAnalyzerProps> = ({ cityId, correl
 
   if (loading) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-[#0B1120]">
-        <div className="flex flex-col items-center gap-4 text-emerald-400">
-          <BrainCircuit className="w-10 h-10 animate-pulse" />
-          <span className="text-xs font-bold tracking-widest uppercase animate-pulse">
+      <div className="w-full h-full min-h-[220px] flex items-center justify-center bg-[#0B1120] p-4 rounded-lg">
+        <div className="flex flex-col items-center gap-3 sm:gap-4 text-emerald-400 text-center">
+          <BrainCircuit className="w-8 h-8 sm:w-10 sm:h-10 animate-pulse" />
+          <span className="text-[10px] sm:text-xs font-bold tracking-widest uppercase animate-pulse">
             Agentic AI synthesizing...
           </span>
         </div>
@@ -86,46 +86,46 @@ export const AgenticAnalyzer: React.FC<AgenticAnalyzerProps> = ({ cityId, correl
   const displayHorizons = insight.horizons ?? FALLBACK_DATA.horizons;
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#0B1120] overflow-y-auto">
-      <div className="bg-emerald-900/20 border-b border-emerald-500/30 px-5 py-4 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2">
-          <BrainCircuit className="w-5 h-5 text-emerald-400" />
-          <h3 className="text-emerald-100 font-bold text-sm tracking-wide">
+    <div className="w-full h-full flex flex-col bg-[#0B1120] overflow-y-auto rounded-lg border border-emerald-500/20">
+      <div className="bg-emerald-900/20 border-b border-emerald-500/30 px-3 sm:px-5 py-3 sm:py-4 flex items-center justify-between shrink-0 gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <BrainCircuit className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 shrink-0" />
+          <h3 className="text-emerald-100 font-bold text-xs sm:text-sm tracking-wide truncate">
             Agentic Forecast Engine
           </h3>
         </div>
-        <span className="text-[9px] uppercase font-black tracking-widest text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded border border-emerald-400/20 flex items-center gap-1.5">
-          <Activity className="w-3 h-3" /> Live ML
+        <span className="text-[8px] sm:text-[9px] uppercase font-black tracking-widest text-emerald-400 bg-emerald-400/10 px-2 py-0.5 sm:py-1 rounded border border-emerald-400/20 flex items-center gap-1 shrink-0">
+          <Activity className="w-3 h-3 shrink-0" /> Live ML
         </span>
       </div>
 
-      <div className="p-5 flex-1">
-        <div className="mb-5 bg-red-950/30 border border-red-500/40 rounded-lg p-4 flex items-start gap-3 shadow-inner">
-          <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-          <div>
-            <h4 className="text-[11px] font-bold text-red-300 uppercase tracking-wider mb-1">Identified Systemic Risk</h4>
-            <p className="text-xs text-red-100 font-medium leading-relaxed">
+      <div className="p-3 sm:p-5 flex-1 space-y-3 sm:space-y-5">
+        <div className="bg-red-950/30 border border-red-500/40 rounded-lg p-3 sm:p-4 flex items-start gap-2.5 sm:gap-3 shadow-inner">
+          <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <h4 className="text-[10px] sm:text-[11px] font-bold text-red-300 uppercase tracking-wider mb-0.5 sm:mb-1">Identified Systemic Risk</h4>
+            <p className="text-[11px] sm:text-xs text-red-100 font-medium leading-relaxed">
               {displayRisk}
             </p>
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 pb-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 pb-6">
           {displayHorizons?.map((horizon, idx) => (
-            <div key={idx} className="bg-gray-900/80 border border-gray-700 hover:border-emerald-500/50 transition-colors rounded-lg p-4 flex flex-col justify-between">
-              <div className="flex items-center gap-2 border-b border-gray-800 pb-2 mb-3">
-                <Clock className="w-4 h-4 text-emerald-400" />
+            <div key={idx} className="bg-gray-900/80 border border-gray-700 hover:border-emerald-500/50 transition-colors rounded-lg p-3 sm:p-4 flex flex-col justify-between">
+              <div className="flex items-center gap-2 border-b border-gray-800 pb-2 mb-2.5 sm:mb-3">
+                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 shrink-0" />
                 <span className="font-bold text-gray-200 text-xs">Horizon: {horizon.time}</span>
               </div>
-              <div className="mb-4">
+              <div className="mb-3 sm:mb-4">
                 <span className="text-[9px] uppercase text-gray-500 font-bold block mb-1">Predicted State</span>
-                <p className="text-xs text-gray-300 leading-relaxed">{horizon.forecast}</p>
+                <p className="text-[11px] sm:text-xs text-gray-300 leading-relaxed">{horizon.forecast}</p>
               </div>
-              <div className="mt-auto bg-emerald-950/20 rounded p-3 border border-emerald-900/50">
-                <span className="text-[9px] uppercase text-emerald-400 font-bold flex items-center gap-1 mb-1.5">
-                  <Zap className="w-3 h-3" /> Autonomous Directive
+              <div className="mt-auto bg-emerald-950/20 rounded p-2.5 sm:p-3 border border-emerald-900/50">
+                <span className="text-[9px] uppercase text-emerald-400 font-bold flex items-center gap-1 mb-1">
+                  <Zap className="w-3 h-3 shrink-0" /> Autonomous Directive
                 </span>
-                <p className="text-xs text-emerald-100 font-semibold">{horizon.directive}</p>
+                <p className="text-[11px] sm:text-xs text-emerald-100 font-semibold">{horizon.directive}</p>
               </div>
             </div>
           ))}

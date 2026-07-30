@@ -113,23 +113,23 @@ export const RoadDetailDrawer: React.FC<RoadDetailDrawerProps> = ({
       animate={{ x: 0 }}
       exit={{ x: '100%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-      className="fixed inset-y-0 right-0 z-50 w-full sm:w-[450px] bg-white border-l border-gray-200 shadow-2xl flex flex-col text-xs"
+      className="fixed inset-y-0 right-0 top-14 sm:top-0 z-50 w-full sm:w-[450px] bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 shadow-2xl flex flex-col text-xs text-gray-900 dark:text-slate-100 max-h-[calc(100vh-56px)] sm:max-h-none"
     >
       {/* Drawer Header Bar */}
-      <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
-        <div className="flex items-center space-x-2">
-          <span className="p-1 bg-blue-600 rounded text-white font-bold">
+      <div className="px-3.5 sm:px-4 py-3 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
+        <div className="flex items-center space-x-2 min-w-0">
+          <span className="p-1 bg-blue-600 rounded text-white font-bold shrink-0">
             {type === 'road' ? '🛣️' : type === 'incident' ? '⚠️' : type === 'camera' ? '📷' : type === 'signal' ? '🚥' : '📡'}
           </span>
-          <div>
-            <div className="font-bold text-sm leading-tight text-white">
+          <div className="min-w-0">
+            <div className="font-bold text-xs sm:text-sm leading-tight text-white truncate">
               {type === 'road' && (data as RoadSegment).name}
               {type === 'incident' && (data as RoadIncident).title}
               {type === 'camera' && (data as TrafficCamera).name}
               {type === 'sensor' && (data as EnvironmentalSensor).name}
               {type === 'signal' && (data as SignalController).junctionName}
             </div>
-            <div className="text-[10px] text-slate-400 font-mono">
+            <div className="text-[10px] text-slate-400 font-mono truncate">
               GIS Asset Inspector • {type.toUpperCase()} ID: {data.id}
             </div>
           </div>
@@ -137,19 +137,19 @@ export const RoadDetailDrawer: React.FC<RoadDetailDrawerProps> = ({
 
         <button
           onClick={onClose}
-          className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors"
+          className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors shrink-0 ml-2"
         >
           <X className="w-5 h-5" />
         </button>
       </div>
 
       {/* Drawer Content Body */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-3.5 sm:p-4 space-y-3.5 sm:space-y-4">
         
         {/* Action Status Toast */}
         {overrideSuccess && (
-          <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-md text-emerald-800 font-semibold text-[11px] flex items-center gap-2 shadow-2xs">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="p-2.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-md text-emerald-800 dark:text-emerald-300 font-semibold text-[11px] flex items-center gap-2 shadow-2xs">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>{overrideSuccess}</span>
           </div>
         )}
@@ -159,39 +159,39 @@ export const RoadDetailDrawer: React.FC<RoadDetailDrawerProps> = ({
           <>
             {/* Speed & Flow Metrics Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-              <div className="bg-gray-50 p-2.5 rounded border border-gray-200">
-                <div className="text-[10px] text-gray-500 font-semibold uppercase">Current Speed</div>
-                <div className="text-base font-bold text-gray-900 mt-0.5">
-                  {(data as RoadSegment).currentSpeed} <span className="text-xs font-normal text-gray-500">km/h</span>
+              <div className="bg-gray-50 dark:bg-slate-800/60 p-2.5 rounded border border-gray-200 dark:border-slate-700/60">
+                <div className="text-[10px] text-gray-500 dark:text-slate-400 font-semibold uppercase">Current Speed</div>
+                <div className="text-base font-bold text-gray-900 dark:text-slate-100 mt-0.5">
+                  {(data as RoadSegment).currentSpeed} <span className="text-xs font-normal text-gray-500 dark:text-slate-400">km/h</span>
                 </div>
-                <div className="text-[9px] text-gray-500 mt-0.5">Speed Limit: {(data as RoadSegment).speedLimit} km/h</div>
+                <div className="text-[9px] text-gray-500 dark:text-slate-400 mt-0.5">Speed Limit: {(data as RoadSegment).speedLimit} km/h</div>
               </div>
 
-              <div className="bg-gray-50 p-2.5 rounded border border-gray-200">
-                <div className="text-[10px] text-gray-500 font-semibold uppercase">Congestion Index</div>
-                <div className={`text-base font-bold mt-0.5 ${(data as RoadSegment).congestionIndex > 70 ? 'text-red-600' : 'text-emerald-600'}`}>
+              <div className="bg-gray-50 dark:bg-slate-800/60 p-2.5 rounded border border-gray-200 dark:border-slate-700/60">
+                <div className="text-[10px] text-gray-500 dark:text-slate-400 font-semibold uppercase">Congestion Index</div>
+                <div className={`text-base font-bold mt-0.5 ${(data as RoadSegment).congestionIndex > 70 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                   {(data as RoadSegment).congestionIndex}%
                 </div>
-                <div className="text-[9px] font-semibold text-gray-600 mt-0.5">{(data as RoadSegment).density} Flow</div>
+                <div className="text-[9px] font-semibold text-gray-600 dark:text-slate-300 mt-0.5">{(data as RoadSegment).density} Flow</div>
               </div>
 
-              <div className="bg-gray-50 p-2.5 rounded border border-gray-200 col-span-2 sm:col-span-1">
-                <div className="text-[10px] text-gray-500 font-semibold uppercase">Vehicle Volume</div>
-                <div className="text-base font-bold text-gray-900 mt-0.5">
-                  {(data as RoadSegment).vehicleCount.toLocaleString()} <span className="text-[10px] font-normal text-gray-500">veh/h</span>
+              <div className="bg-gray-50 dark:bg-slate-800/60 p-2.5 rounded border border-gray-200 dark:border-slate-700/60 col-span-2 sm:col-span-1">
+                <div className="text-[10px] text-gray-500 dark:text-slate-400 font-semibold uppercase">Vehicle Volume</div>
+                <div className="text-base font-bold text-gray-900 dark:text-slate-100 mt-0.5">
+                  {(data as RoadSegment).vehicleCount.toLocaleString()} <span className="text-[10px] font-normal text-gray-500 dark:text-slate-400">veh/h</span>
                 </div>
-                <div className="text-[9px] text-gray-500 mt-0.5">Optical Sensor Sync</div>
+                <div className="text-[9px] text-gray-500 dark:text-slate-400 mt-0.5">Optical Sensor Sync</div>
               </div>
             </div>
 
             {/* Mini Sparkline Chart for Road Congestion Trend */}
-            <div className="bg-white p-3 rounded-md border border-gray-200 space-y-2 shadow-2xs">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-1.5">
-                <div className="font-bold text-gray-900 text-xs flex items-center gap-1.5">
-                  <TrendingUp className="w-4 h-4 text-blue-600" />
+            <div className="bg-white dark:bg-slate-800/50 p-3 rounded-md border border-gray-200 dark:border-slate-700 space-y-2 shadow-2xs">
+              <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-700 pb-1.5">
+                <div className="font-bold text-gray-900 dark:text-slate-100 text-xs flex items-center gap-1.5">
+                  <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
                   <span>Real-Time Congestion Sparkline Trend</span>
                 </div>
-                <span className="text-[10px] font-mono font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-mono font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-1.5 py-0.5 rounded">
                   Past 60 Mins
                 </span>
               </div>
@@ -222,7 +222,7 @@ export const RoadDetailDrawer: React.FC<RoadDetailDrawerProps> = ({
                 </ResponsiveContainer>
               </div>
               
-              <div className="flex items-center justify-between text-[10px] text-gray-500 font-mono pt-1 border-t border-gray-100">
+              <div className="flex items-center justify-between text-[10px] text-gray-500 dark:text-slate-400 font-mono pt-1 border-t border-gray-100 dark:border-slate-700">
                 <span>Peak: {Math.max(...roadTrendData.map(d => d.congestion))}%</span>
                 <span>Avg Speed: {(data as RoadSegment).currentSpeed} km/h</span>
                 <span>Min: {Math.min(...roadTrendData.map(d => d.congestion))}%</span>
@@ -230,38 +230,38 @@ export const RoadDetailDrawer: React.FC<RoadDetailDrawerProps> = ({
             </div>
 
             {/* Travel Time Comparison */}
-            <div className="bg-blue-50/60 p-3 rounded-md border border-blue-200 space-y-1.5">
-              <div className="font-bold text-blue-900 text-xs flex items-center justify-between">
+            <div className="bg-blue-50/60 dark:bg-blue-500/10 p-3 rounded-md border border-blue-200 dark:border-blue-500/20 space-y-1.5">
+              <div className="font-bold text-blue-900 dark:text-blue-300 text-xs flex items-center justify-between">
                 <span>Travel Time Analysis</span>
-                <span className="text-blue-700 font-mono text-[10px]">District: {(data as RoadSegment).district}</span>
+                <span className="text-blue-700 dark:text-blue-400 font-mono text-[10px]">District: {(data as RoadSegment).district}</span>
               </div>
               <div className="flex items-center justify-between text-[11px]">
-                <span className="text-gray-600">Current Travel Duration:</span>
-                <span className="font-bold text-red-600">{(data as RoadSegment).travelTime} mins</span>
+                <span className="text-gray-600 dark:text-slate-400">Current Travel Duration:</span>
+                <span className="font-bold text-red-600 dark:text-red-400">{(data as RoadSegment).travelTime} mins</span>
               </div>
               <div className="flex items-center justify-between text-[11px]">
-                <span className="text-gray-600">Free-Flow Standard Duration:</span>
-                <span className="font-semibold text-gray-700">{(data as RoadSegment).normalTravelTime} mins</span>
+                <span className="text-gray-600 dark:text-slate-400">Free-Flow Standard Duration:</span>
+                <span className="font-semibold text-gray-700 dark:text-slate-200">{(data as RoadSegment).normalTravelTime} mins</span>
               </div>
             </div>
 
             {/* Recommended Alternative Route */}
-            <div className="bg-white p-3 rounded-md border border-gray-200 space-y-2 shadow-2xs">
-              <div className="font-bold text-gray-900 text-xs flex items-center gap-1.5 text-blue-700">
-                <Navigation className="w-4 h-4 text-blue-600" /> Recommended AI Bypass Route
+            <div className="bg-white dark:bg-slate-800/50 p-3 rounded-md border border-gray-200 dark:border-slate-700 space-y-2 shadow-2xs">
+              <div className="font-bold text-gray-900 dark:text-slate-100 text-xs flex items-center gap-1.5 text-blue-700 dark:text-blue-400">
+                <Navigation className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" /> Recommended AI Bypass Route
               </div>
-              <div className="flex items-center justify-between text-[11px] bg-gray-50 p-2 rounded border border-gray-200 font-medium">
-                <span className="text-gray-900 font-semibold">{(data as RoadSegment).alternativeRouteName}</span>
-                <span className="text-emerald-700 font-bold bg-emerald-100 px-1.5 py-0.5 rounded text-[10px]">
+              <div className="flex items-center justify-between text-[11px] bg-gray-50 dark:bg-slate-800 p-2 rounded border border-gray-200 dark:border-slate-700 font-medium">
+                <span className="text-gray-900 dark:text-slate-100 font-semibold truncate">{(data as RoadSegment).alternativeRouteName}</span>
+                <span className="text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-100 dark:bg-emerald-500/20 px-1.5 py-0.5 rounded text-[10px] shrink-0 ml-1">
                   Save ~{Math.max(1, (data as RoadSegment).travelTime - (data as RoadSegment).alternativeRouteTime)} mins
                 </span>
               </div>
             </div>
 
             {/* AI Cause Explanation */}
-            <div className="bg-slate-900 text-slate-100 p-3 rounded-md space-y-1.5 shadow-2xs">
+            <div className="bg-slate-900 dark:bg-slate-950 text-slate-100 p-3 rounded-md space-y-1.5 shadow-2xs border border-slate-800">
               <div className="font-bold text-xs flex items-center gap-1.5 text-blue-400">
-                <Cpu className="w-4 h-4" /> AI Diagnostics & Forecast
+                <Cpu className="w-4 h-4 shrink-0" /> AI Diagnostics & Forecast
               </div>
               <p className="text-[11px] text-slate-300 leading-relaxed">
                 {(data as RoadSegment).aiExplanation}
@@ -277,28 +277,28 @@ export const RoadDetailDrawer: React.FC<RoadDetailDrawerProps> = ({
         {/* INCIDENT DETAILED TELEMETRY */}
         {type === 'incident' && (
           <>
-            <div className="bg-red-50 p-3 rounded-md border border-red-200 space-y-2">
+            <div className="bg-red-50 dark:bg-red-500/10 p-3 rounded-md border border-red-200 dark:border-red-500/30 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="px-2 py-0.5 rounded font-bold uppercase text-[10px] bg-red-600 text-white">
                   {(data as RoadIncident).severity} {(data as RoadIncident).type.replace('_', ' ')}
                 </span>
-                <span className="text-red-700 font-mono font-semibold text-[10px]">
+                <span className="text-red-700 dark:text-red-400 font-mono font-semibold text-[10px]">
                   Status: {(data as RoadIncident).status.toUpperCase()}
                 </span>
               </div>
-              <p className="text-[11px] text-red-900 font-semibold">
+              <p className="text-[11px] text-red-900 dark:text-red-200 font-semibold leading-snug">
                 {(data as RoadIncident).description}
               </p>
             </div>
 
             {/* Mini Sparkline Chart for Incident Congestion Impact & AI Recovery Curve */}
-            <div className="bg-white p-3 rounded-md border border-gray-200 space-y-2 shadow-2xs">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-1.5">
-                <div className="font-bold text-gray-900 text-xs flex items-center gap-1.5">
-                  <Activity className="w-4 h-4 text-red-600" />
+            <div className="bg-white dark:bg-slate-800/50 p-3 rounded-md border border-gray-200 dark:border-slate-700 space-y-2 shadow-2xs">
+              <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-700 pb-1.5">
+                <div className="font-bold text-gray-900 dark:text-slate-100 text-xs flex items-center gap-1.5">
+                  <Activity className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
                   <span>Incident Impact & AI Recovery Trajectory</span>
                 </div>
-                <span className="text-[10px] font-mono font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-mono font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded">
                   AI Forecast
                 </span>
               </div>
@@ -330,44 +330,44 @@ export const RoadDetailDrawer: React.FC<RoadDetailDrawerProps> = ({
                 </ResponsiveContainer>
               </div>
 
-              <div className="flex items-center justify-between text-[10px] text-slate-600 font-medium bg-gray-50 p-2 rounded border border-gray-100">
-                <span className="flex items-center gap-1 text-red-700 font-semibold">
+              <div className="flex items-center justify-between text-[10px] text-slate-600 dark:text-slate-300 font-medium bg-gray-50 dark:bg-slate-800 p-2 rounded border border-gray-100 dark:border-slate-700">
+                <span className="flex items-center gap-1 text-red-700 dark:text-red-400 font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-600 inline-block"></span> Historical Spike
                 </span>
-                <span className="flex items-center gap-1 text-emerald-700 font-semibold">
+                <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span> AI Projected Recovery
                 </span>
               </div>
             </div>
 
-            <div className="bg-gray-50 p-3 rounded-md border border-gray-200 space-y-2">
-              <div className="font-bold text-gray-900 text-xs">Incident Telemetry Details</div>
-              <div className="grid grid-cols-2 gap-2 text-[11px]">
-                <div className="bg-white p-2 rounded border border-gray-200">
-                  <div className="text-gray-500 text-[10px]">Location</div>
-                  <div className="font-bold text-gray-900 mt-0.5">{(data as RoadIncident).locationName}</div>
+            <div className="bg-gray-50 dark:bg-slate-800/60 p-3 rounded-md border border-gray-200 dark:border-slate-700/60 space-y-2">
+              <div className="font-bold text-gray-900 dark:text-slate-100 text-xs">Incident Telemetry Details</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                <div className="bg-white dark:bg-slate-800 p-2 rounded border border-gray-200 dark:border-slate-700">
+                  <div className="text-gray-500 dark:text-slate-400 text-[10px]">Location</div>
+                  <div className="font-bold text-gray-900 dark:text-slate-100 mt-0.5">{(data as RoadIncident).locationName}</div>
                 </div>
-                <div className="bg-white p-2 rounded border border-gray-200">
-                  <div className="text-gray-500 text-[10px]">Lanes Affected</div>
-                  <div className="font-bold text-gray-900 mt-0.5">{(data as RoadIncident).affectedLanes} Lanes Blocked</div>
+                <div className="bg-white dark:bg-slate-800 p-2 rounded border border-gray-200 dark:border-slate-700">
+                  <div className="text-gray-500 dark:text-slate-400 text-[10px]">Lanes Affected</div>
+                  <div className="font-bold text-gray-900 dark:text-slate-100 mt-0.5">{(data as RoadIncident).affectedLanes} Lanes Blocked</div>
                 </div>
-                <div className="bg-white p-2 rounded border border-gray-200">
-                  <div className="text-gray-500 text-[10px]">Reported Timestamp</div>
-                  <div className="font-mono text-gray-800 mt-0.5">{(data as RoadIncident).timestamp}</div>
+                <div className="bg-white dark:bg-slate-800 p-2 rounded border border-gray-200 dark:border-slate-700">
+                  <div className="text-gray-500 dark:text-slate-400 text-[10px]">Reported Timestamp</div>
+                  <div className="font-mono text-gray-800 dark:text-slate-200 mt-0.5">{(data as RoadIncident).timestamp}</div>
                 </div>
-                <div className="bg-white p-2 rounded border border-gray-200">
-                  <div className="text-gray-500 text-[10px]">Est. Resolution</div>
-                  <div className="font-mono text-blue-700 font-bold mt-0.5">{(data as RoadIncident).estimatedResolution}</div>
+                <div className="bg-white dark:bg-slate-800 p-2 rounded border border-gray-200 dark:border-slate-700">
+                  <div className="text-gray-500 dark:text-slate-400 text-[10px]">Est. Resolution</div>
+                  <div className="font-mono text-blue-700 dark:text-blue-400 font-bold mt-0.5">{(data as RoadIncident).estimatedResolution}</div>
                 </div>
               </div>
             </div>
 
             {(data as RoadIncident).recommendedAction && (
-              <div className="bg-blue-50 p-3 rounded-md border border-blue-200 space-y-1">
-                <div className="font-bold text-blue-900 text-xs flex items-center gap-1.5">
-                  <Cpu className="w-4 h-4 text-blue-600" /> AI Tactical Dispatch Protocol
+              <div className="bg-blue-50 dark:bg-blue-500/10 p-3 rounded-md border border-blue-200 dark:border-blue-500/20 space-y-1">
+                <div className="font-bold text-blue-900 dark:text-blue-300 text-xs flex items-center gap-1.5">
+                  <Cpu className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" /> AI Tactical Dispatch Protocol
                 </div>
-                <p className="text-[11px] text-blue-800">
+                <p className="text-[11px] text-blue-800 dark:text-blue-200 leading-relaxed">
                   {(data as RoadIncident).recommendedAction}
                 </p>
               </div>
@@ -420,7 +420,7 @@ export const RoadDetailDrawer: React.FC<RoadDetailDrawerProps> = ({
             <div className="bg-slate-900 text-slate-100 p-3 rounded-md border border-slate-800 space-y-2 shadow-2xs">
               <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
                 <div className="font-bold text-xs flex items-center gap-1.5 text-blue-400">
-                  <BarChart2 className="w-4 h-4 text-blue-400" />
+                  <BarChart2 className="w-4 h-4 text-blue-400 shrink-0" />
                   <span>AI Vehicle Detection Sparkline</span>
                 </div>
                 <span className="text-[10px] font-mono text-emerald-400 font-semibold bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800">
@@ -460,13 +460,13 @@ export const RoadDetailDrawer: React.FC<RoadDetailDrawerProps> = ({
         {type === 'sensor' && (
           <>
             {/* Mini Sparkline Chart for Environmental Sensor Readings */}
-            <div className="bg-white p-3 rounded-md border border-gray-200 space-y-2 shadow-2xs">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-1.5">
-                <div className="font-bold text-gray-900 text-xs flex items-center gap-1.5">
-                  <TrendingUp className="w-4 h-4 text-blue-600" />
+            <div className="bg-white dark:bg-slate-800/50 p-3 rounded-md border border-gray-200 dark:border-slate-700 space-y-2 shadow-2xs">
+              <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-700 pb-1.5">
+                <div className="font-bold text-gray-900 dark:text-slate-100 text-xs flex items-center gap-1.5">
+                  <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
                   <span>Sensor Telemetry Sparkline ({(data as EnvironmentalSensor).unit})</span>
                 </div>
-                <span className="text-[10px] font-mono text-blue-600 font-semibold bg-blue-50 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-mono text-blue-600 dark:text-blue-400 font-semibold bg-blue-50 dark:bg-blue-500/10 px-1.5 py-0.5 rounded">
                   Live Gauge
                 </span>
               </div>
@@ -527,9 +527,9 @@ export const RoadDetailDrawer: React.FC<RoadDetailDrawerProps> = ({
         )}
 
         {/* OPERATOR COMMAND ACTIONS BOX */}
-        <div className="bg-white p-3 rounded-md border border-gray-200 space-y-2.5 shadow-2xs">
-          <div className="font-bold text-gray-900 text-xs flex items-center gap-1.5 border-b border-gray-100 pb-1.5">
-            <Sliders className="w-4 h-4 text-blue-600" /> Operator Control Protocols
+        <div className="bg-white dark:bg-slate-800/50 p-3 rounded-md border border-gray-200 dark:border-slate-700 space-y-2.5 shadow-2xs">
+          <div className="font-bold text-gray-900 dark:text-slate-100 text-xs flex items-center gap-1.5 border-b border-gray-100 dark:border-slate-700 pb-1.5">
+            <Sliders className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" /> Operator Control Protocols
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -538,15 +538,15 @@ export const RoadDetailDrawer: React.FC<RoadDetailDrawerProps> = ({
               className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold transition-colors text-left flex items-center justify-between"
             >
               <span>+20s Green Override</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5 shrink-0" />
             </button>
 
             <button
               onClick={() => triggerAction('Patrol Dispatch Alert broadcasted to nearest traffic officer unit.')}
-              className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded font-bold transition-colors text-left flex items-center justify-between"
+              className="px-3 py-2 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white rounded font-bold transition-colors text-left flex items-center justify-between border border-slate-800 dark:border-slate-700"
             >
               <span>Dispatch Traffic Unit</span>
-              <ShieldAlert className="w-3.5 h-3.5" />
+              <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
             </button>
 
             <button
@@ -554,7 +554,7 @@ export const RoadDetailDrawer: React.FC<RoadDetailDrawerProps> = ({
               className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded font-bold transition-colors text-left flex items-center justify-between"
             >
               <span>Update VMS Signs</span>
-              <Radio className="w-3.5 h-3.5" />
+              <Radio className="w-3.5 h-3.5 shrink-0" />
             </button>
 
             {type === 'incident' && onResolveIncident && (data as RoadIncident).status !== 'resolved' ? (
@@ -566,15 +566,15 @@ export const RoadDetailDrawer: React.FC<RoadDetailDrawerProps> = ({
                 className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-bold transition-colors text-left flex items-center justify-between"
               >
                 <span>Resolve Incident</span>
-                <CheckCircle2 className="w-3.5 h-3.5" />
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
               </button>
             ) : (
               <button
                 onClick={() => triggerAction('Briefing summary copied to clipboard.')}
-                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded font-bold transition-colors text-left flex items-center justify-between"
+                className="px-3 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-800 dark:text-slate-200 rounded font-bold transition-colors text-left flex items-center justify-between border border-gray-200 dark:border-slate-700"
               >
                 <span>Copy Summary Log</span>
-                <Share2 className="w-3.5 h-3.5" />
+                <Share2 className="w-3.5 h-3.5 shrink-0" />
               </button>
             )}
           </div>
@@ -583,11 +583,11 @@ export const RoadDetailDrawer: React.FC<RoadDetailDrawerProps> = ({
       </div>
 
       {/* Drawer Footer */}
-      <div className="p-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-[10px] text-gray-500">
-        <span>Taipei City Traffic Bureau / National Command Standard</span>
+      <div className="p-3 bg-gray-50 dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 flex items-center justify-between text-[10px] text-gray-500 dark:text-slate-400 shrink-0">
+        <span className="truncate mr-2">Taipei City Traffic Bureau / National Command Standard</span>
         <button
           onClick={onClose}
-          className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded transition-colors"
+          className="px-3 py-1 bg-gray-200 dark:bg-slate-800 hover:bg-gray-300 dark:hover:bg-slate-700 text-gray-800 dark:text-slate-200 font-bold rounded transition-colors shrink-0"
         >
           Close Drawer
         </button>
